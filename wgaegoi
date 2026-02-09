@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Feed Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .ticker-controls {
+            max-width: 2400px;
+            margin: 0 auto 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .ticker-controls h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .ticker-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ticker-item label {
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .ticker-item input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+
+        .ticker-item input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .ticker-item button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .ticker-item button:hover {
+            background-color: #45a049;
+        }
+
+        .ticker-item button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .ticker-item .status {
+            font-size: 12px;
+            color: #666;
+            min-height: 18px;
+        }
+
+        .select-files-btn {
+            padding: 12px 24px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .select-files-btn:hover {
+            background-color: #0b7dda;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 2400px;
+            margin: 0 auto;
+            height: calc(100vh - 320px);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Feed Monitor</h1>
+
+    <div class="ticker-controls">
+        <h2>Ticker Controls</h2>
+        <button class="select-files-btn" id="selectFilesBtn">Select Ticker Folder</button>
+
+        <div class="ticker-grid">
+            <div class="ticker-item">
+                <label for="ticker1">Plasma Table</label>
+                <input type="text" id="ticker1" placeholder="Enter ticker text..." disabled>
+                <button id="save1" disabled>Save</button>
+                <div class="status" id="status1"></div>
+            </div>
+
+            <div class="ticker-item">
+                <label for="ticker2">Fitting/Welding</label>
+                <input type="text" id="ticker2" placeholder="Enter ticker text..." disabled>
+                <button id="save2" disabled>Save</button>
+                <div class="status" id="status2"></div>
+            </div>
+
+            <div class="ticker-item">
+                <label for="ticker3">Pull Through Welder</label>
+                <input type="text" id="ticker3" placeholder="Enter ticker text..." disabled>
+                <button id="save3" disabled>Save</button>
+                <div class="status" id="status3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="video-grid">
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/B-X0MOIvGjk?autoplay=1&mute=1&controls=0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/KVrKK2tuse0?autoplay=1&mute=1&controls=0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/Cs_Hzs7Ej5c?autoplay=1&mute=1&controls=0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/eT-3IGdGzs0?autoplay=1&mute=1&controls=0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/7MkzmmsV8Xg?autoplay=1&mute=1&controls=0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        <div class="video-container">
+            <iframe
+                src="https://www.youtube.com/embed/I7ZPMitfPJQ?autoplay=1&mute=1&controls=0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+    </div>
+
+    <script>
+        // File handles for the three ticker files
+        let fileHandles = {
+            ticker1: null,
+            ticker2: null,
+            ticker3: null
+        };
+
+        let directoryHandle = null;
+
+        // Filenames to look for in the selected directory
+        const FILENAMES = {
+            ticker1: 'plasma-table.txt',
+            ticker2: 'fitting-welding.txt',
+            ticker3: 'pull-through-welder.txt'
+        };
+
+        // IndexedDB setup for persisting directory handle
+        const DB_NAME = 'TickerMonitorDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'directoryHandles';
+
+        // Check if File System Access API is supported
+        if (!('showDirectoryPicker' in window)) {
+            alert('Your browser does not support the File System Access API. Please use Chrome, Edge, or another Chromium-based browser.');
+        }
+
+        // Initialize IndexedDB
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+            });
+        }
+
+        // Save directory handle to IndexedDB
+        async function saveDirectoryHandle(handle) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(handle, 'tickerDirectory');
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve();
+            });
+        }
+
+        // Load directory handle from IndexedDB
+        async function loadDirectoryHandle() {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get('tickerDirectory');
+
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+            });
+        }
+
+        // Load files from directory
+        async function loadFilesFromDirectory(dirHandle) {
+            try {
+                directoryHandle = dirHandle;
+
+                // Try to get file handles for each ticker
+                for (const [tickerId, filename] of Object.entries(FILENAMES)) {
+                    try {
+                        fileHandles[tickerId] = await dirHandle.getFileHandle(filename);
+                        await loadFileContent(tickerId);
+                        updateStatus(`status${tickerId.slice(-1)}`, `Loaded ${filename}`);
+                    } catch (err) {
+                        console.error(`Error loading ${filename}:`, err);
+                        updateStatus(`status${tickerId.slice(-1)}`, `File not found: ${filename}`);
+                    }
+                }
+
+                // Enable all inputs and save buttons
+                document.getElementById('ticker1').disabled = false;
+                document.getElementById('ticker2').disabled = false;
+                document.getElementById('ticker3').disabled = false;
+                document.getElementById('save1').disabled = false;
+                document.getElementById('save2').disabled = false;
+                document.getElementById('save3').disabled = false;
+
+                // Save directory handle for next time
+                await saveDirectoryHandle(dirHandle);
+
+            } catch (err) {
+                console.error('Error loading files from directory:', err);
+                alert('Error loading files from directory. Please try again.');
+            }
+        }
+
+        // Select folder button handler
+        document.getElementById('selectFilesBtn').addEventListener('click', async () => {
+            try {
+                const dirHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite'
+                });
+
+                await loadFilesFromDirectory(dirHandle);
+            } catch (err) {
+                console.error('Error selecting directory:', err);
+                if (err.name !== 'AbortError') {
+                    alert('Error selecting directory. Please try again.');
+                }
+            }
+        });
+
+        // Load file content
+        async function loadFileContent(tickerId) {
+            try {
+                const file = await fileHandles[tickerId].getFile();
+                const content = await file.text();
+                document.getElementById(tickerId).value = content;
+            } catch (err) {
+                console.error(`Error loading ${tickerId}:`, err);
+                updateStatus(`status${tickerId.slice(-1)}`, 'Error loading file');
+            }
+        }
+
+        // Save file content
+        async function saveFileContent(tickerId) {
+            try {
+                const writable = await fileHandles[tickerId].createWritable();
+                const content = document.getElementById(tickerId).value;
+                await writable.write(content);
+                await writable.close();
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                updateStatus(`status${tickerId.slice(-1)}`, `Saved at ${timeStr}`);
+            } catch (err) {
+                console.error(`Error saving ${tickerId}:`, err);
+                updateStatus(`status${tickerId.slice(-1)}`, 'Error saving file');
+            }
+        }
+
+        // Update status message
+        function updateStatus(statusId, message) {
+            document.getElementById(statusId).textContent = message;
+        }
+
+        // Save button handlers
+        document.getElementById('save1').addEventListener('click', () => saveFileContent('ticker1'));
+        document.getElementById('save2').addEventListener('click', () => saveFileContent('ticker2'));
+        document.getElementById('save3').addEventListener('click', () => saveFileContent('ticker3'));
+
+        // Save on Enter key
+        document.getElementById('ticker1').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                saveFileContent('ticker1');
+            }
+        });
+        document.getElementById('ticker2').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                saveFileContent('ticker2');
+            }
+        });
+        document.getElementById('ticker3').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                saveFileContent('ticker3');
+            }
+        });
+
+        // Try to restore directory on page load
+        (async function initOnLoad() {
+            try {
+                const savedDirHandle = await loadDirectoryHandle();
+                if (savedDirHandle) {
+                    // Verify we still have permission
+                    const permission = await savedDirHandle.queryPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
+                        updateStatus('status1', 'Restoring saved folder...');
+                        updateStatus('status2', 'Restoring saved folder...');
+                        updateStatus('status3', 'Restoring saved folder...');
+                        await loadFilesFromDirectory(savedDirHandle);
+                    } else if (permission === 'prompt') {
+                        // Request permission
+                        const newPermission = await savedDirHandle.requestPermission({ mode: 'readwrite' });
+                        if (newPermission === 'granted') {
+                            await loadFilesFromDirectory(savedDirHandle);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.log('No saved directory or permission denied:', err);
+                // Not an error, just means they need to select folder manually
+            }
+        })();
+    </script>
+</body>
+</html>
