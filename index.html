@@ -14,112 +14,140 @@
         body {
             background-color: white;
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 10px;
+            overflow: hidden;
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
         }
 
-        .ticker-controls {
-            max-width: 2400px;
-            margin: 0 auto 20px;
-            padding: 20px;
+        .modal-content {
             background-color: #f5f5f5;
+            margin: 2% auto;
+            padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 1200px;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
 
-        .ticker-controls h2 {
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal h2 {
             margin-bottom: 15px;
             color: #333;
             font-size: 18px;
         }
 
-        .ticker-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
+        .modal iframe {
+            width: 100%;
+            border: none;
+            border-radius: 4px;
         }
 
-        .ticker-item {
+        .modal-password-prompt {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            gap: 20px;
+            padding: 40px;
         }
 
-        .ticker-item label {
-            font-weight: bold;
-            color: #555;
-            font-size: 14px;
+        .modal-password-prompt h3 {
+            color: #333;
+            margin: 0;
         }
 
-        .ticker-item input {
-            padding: 10px;
+        .modal-password-prompt input {
+            padding: 10px 20px;
             border: 2px solid #ddd;
             border-radius: 4px;
-            font-size: 14px;
-            font-family: Arial, sans-serif;
+            font-size: 16px;
+            width: 300px;
         }
 
-        .ticker-item input:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
-
-        .ticker-item button {
-            padding: 8px 16px;
+        .modal-password-prompt button {
+            padding: 10px 30px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
         }
 
-        .ticker-item button:hover {
+        .modal-password-prompt button:hover {
             background-color: #45a049;
         }
 
-        .ticker-item button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        .error {
+            color: red;
+            font-size: 14px;
         }
 
-        .ticker-item .status {
-            font-size: 12px;
-            color: #666;
-            min-height: 18px;
+        .modal-form {
+            display: none;
         }
 
-        .select-files-btn {
-            padding: 12px 24px;
+        .open-form-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 30px;
             background-color: #2196F3;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 50px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
         }
 
-        .select-files-btn:hover {
+        .open-form-btn:hover {
             background-color: #0b7dda;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 24px;
         }
 
         .video-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(2, 1fr);
-            gap: 15px;
+            gap: 10px;
             max-width: 2400px;
             margin: 0 auto;
-            height: calc(100vh - 320px);
+            height: calc(100vh - 65px);
         }
 
         .video-container {
@@ -140,38 +168,31 @@
             height: 100%;
             border: none;
         }
+
+        .form-section {
+            max-width: 2400px;
+            margin: 0 auto 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .form-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .form-section iframe {
+            width: 100%;
+            border: none;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <h1>Live Feed Monitor</h1>
-
-    <div class="ticker-controls">
-        <h2>Ticker Controls</h2>
-        <button class="select-files-btn" id="selectFilesBtn">Select Ticker Folder</button>
-
-        <div class="ticker-grid">
-            <div class="ticker-item">
-                <label for="ticker1">Plasma Table</label>
-                <input type="text" id="ticker1" placeholder="Enter ticker text..." disabled>
-                <button id="save1" disabled>Save</button>
-                <div class="status" id="status1"></div>
-            </div>
-
-            <div class="ticker-item">
-                <label for="ticker2">Fitting/Welding</label>
-                <input type="text" id="ticker2" placeholder="Enter ticker text..." disabled>
-                <button id="save2" disabled>Save</button>
-                <div class="status" id="status2"></div>
-            </div>
-
-            <div class="ticker-item">
-                <label for="ticker3">Pull Through Welder</label>
-                <input type="text" id="ticker3" placeholder="Enter ticker text..." disabled>
-                <button id="save3" disabled>Save</button>
-                <div class="status" id="status3"></div>
-            </div>
-        </div>
-    </div>
+    <h1>Great Western Buildings Factory Live Feed</h1>
 
     <div class="video-grid">
         <div class="video-container">
@@ -223,210 +244,86 @@
         </div>
     </div>
 
+    <button class="open-form-btn" onclick="openModal()">Admin</button>
+
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modalPasswordPrompt" class="modal-password-prompt">
+                <h3>Enter Password to Update Tickers</h3>
+                <input type="password" id="modal-password-input" placeholder="Enter password">
+                <button onclick="checkModalPassword()">Submit</button>
+                <div id="modal-error-message" class="error"></div>
+            </div>
+            <div id="modalForm" class="modal-form">
+                <h2>Remote Ticker Update</h2>
+                <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd-b3Ud6fPLv_FWhxXdjjfPGGA1spUTzQIJwPdFn6QBWtkUEA/viewform?embedded=true" height="700">Loading…</iframe>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // File handles for the three ticker files
-        let fileHandles = {
-            ticker1: null,
-            ticker2: null,
-            ticker3: null
-        };
+        const CORRECT_PASSWORD = "GWB8890";
 
-        let directoryHandle = null;
-
-        // Filenames to look for in the selected directory
-        const FILENAMES = {
-            ticker1: 'plasma-table.txt',
-            ticker2: 'fitting-welding.txt',
-            ticker3: 'pull-through-welder.txt'
-        };
-
-        // IndexedDB setup for persisting directory handle
-        const DB_NAME = 'TickerMonitorDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'directoryHandles';
-
-        // Check if File System Access API is supported
-        if (!('showDirectoryPicker' in window)) {
-            alert('Your browser does not support the File System Access API. Please use Chrome, Edge, or another Chromium-based browser.');
-        }
-
-        // Initialize IndexedDB
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME);
-                    }
-                };
-            });
-        }
-
-        // Save directory handle to IndexedDB
-        async function saveDirectoryHandle(handle) {
-            const db = await initDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.put(handle, 'tickerDirectory');
-
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve();
-            });
-        }
-
-        // Load directory handle from IndexedDB
-        async function loadDirectoryHandle() {
-            const db = await initDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get('tickerDirectory');
-
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => resolve(request.result);
-            });
-        }
-
-        // Load files from directory
-        async function loadFilesFromDirectory(dirHandle) {
-            try {
-                directoryHandle = dirHandle;
-
-                // Try to get file handles for each ticker
-                for (const [tickerId, filename] of Object.entries(FILENAMES)) {
-                    try {
-                        fileHandles[tickerId] = await dirHandle.getFileHandle(filename);
-                        await loadFileContent(tickerId);
-                        updateStatus(`status${tickerId.slice(-1)}`, `Loaded ${filename}`);
-                    } catch (err) {
-                        console.error(`Error loading ${filename}:`, err);
-                        updateStatus(`status${tickerId.slice(-1)}`, `File not found: ${filename}`);
-                    }
-                }
-
-                // Enable all inputs and save buttons
-                document.getElementById('ticker1').disabled = false;
-                document.getElementById('ticker2').disabled = false;
-                document.getElementById('ticker3').disabled = false;
-                document.getElementById('save1').disabled = false;
-                document.getElementById('save2').disabled = false;
-                document.getElementById('save3').disabled = false;
-
-                // Save directory handle for next time
-                await saveDirectoryHandle(dirHandle);
-
-            } catch (err) {
-                console.error('Error loading files from directory:', err);
-                alert('Error loading files from directory. Please try again.');
+        // Modal functions
+        function openModal() {
+            document.getElementById('formModal').style.display = 'block';
+            // Check if already authenticated in this session
+            if (sessionStorage.getItem('tickerAuthenticated') === 'true') {
+                showModalForm();
+            } else {
+                showModalPassword();
             }
         }
 
-        // Select folder button handler
-        document.getElementById('selectFilesBtn').addEventListener('click', async () => {
-            try {
-                const dirHandle = await window.showDirectoryPicker({
-                    mode: 'readwrite'
-                });
+        function closeModal() {
+            document.getElementById('formModal').style.display = 'none';
+            // Clear error message when closing
+            document.getElementById('modal-error-message').textContent = '';
+        }
 
-                await loadFilesFromDirectory(dirHandle);
-            } catch (err) {
-                console.error('Error selecting directory:', err);
-                if (err.name !== 'AbortError') {
-                    alert('Error selecting directory. Please try again.');
-                }
+        function checkModalPassword() {
+            const input = document.getElementById('modal-password-input');
+            const errorMessage = document.getElementById('modal-error-message');
+
+            if (input.value === CORRECT_PASSWORD) {
+                sessionStorage.setItem('tickerAuthenticated', 'true');
+                showModalForm();
+            } else {
+                errorMessage.textContent = 'Incorrect password. Please try again.';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        function showModalPassword() {
+            document.getElementById('modalPasswordPrompt').style.display = 'flex';
+            document.getElementById('modalForm').style.display = 'none';
+            // Focus on password input
+            setTimeout(() => {
+                document.getElementById('modal-password-input').focus();
+            }, 100);
+        }
+
+        function showModalForm() {
+            document.getElementById('modalPasswordPrompt').style.display = 'none';
+            document.getElementById('modalForm').style.display = 'block';
+        }
+
+        // Allow Enter key to submit password in modal
+        document.getElementById('modal-password-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkModalPassword();
             }
         });
 
-        // Load file content
-        async function loadFileContent(tickerId) {
-            try {
-                const file = await fileHandles[tickerId].getFile();
-                const content = await file.text();
-                document.getElementById(tickerId).value = content;
-            } catch (err) {
-                console.error(`Error loading ${tickerId}:`, err);
-                updateStatus(`status${tickerId.slice(-1)}`, 'Error loading file');
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('formModal');
+            if (event.target === modal) {
+                closeModal();
             }
         }
-
-        // Save file content
-        async function saveFileContent(tickerId) {
-            try {
-                const writable = await fileHandles[tickerId].createWritable();
-                const content = document.getElementById(tickerId).value;
-                await writable.write(content);
-                await writable.close();
-
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString();
-                updateStatus(`status${tickerId.slice(-1)}`, `Saved at ${timeStr}`);
-            } catch (err) {
-                console.error(`Error saving ${tickerId}:`, err);
-                updateStatus(`status${tickerId.slice(-1)}`, 'Error saving file');
-            }
-        }
-
-        // Update status message
-        function updateStatus(statusId, message) {
-            document.getElementById(statusId).textContent = message;
-        }
-
-        // Save button handlers
-        document.getElementById('save1').addEventListener('click', () => saveFileContent('ticker1'));
-        document.getElementById('save2').addEventListener('click', () => saveFileContent('ticker2'));
-        document.getElementById('save3').addEventListener('click', () => saveFileContent('ticker3'));
-
-        // Save on Enter key
-        document.getElementById('ticker1').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                saveFileContent('ticker1');
-            }
-        });
-        document.getElementById('ticker2').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                saveFileContent('ticker2');
-            }
-        });
-        document.getElementById('ticker3').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                saveFileContent('ticker3');
-            }
-        });
-
-        // Try to restore directory on page load
-        (async function initOnLoad() {
-            try {
-                const savedDirHandle = await loadDirectoryHandle();
-                if (savedDirHandle) {
-                    // Verify we still have permission
-                    const permission = await savedDirHandle.queryPermission({ mode: 'readwrite' });
-                    if (permission === 'granted') {
-                        updateStatus('status1', 'Restoring saved folder...');
-                        updateStatus('status2', 'Restoring saved folder...');
-                        updateStatus('status3', 'Restoring saved folder...');
-                        await loadFilesFromDirectory(savedDirHandle);
-                    } else if (permission === 'prompt') {
-                        // Request permission
-                        const newPermission = await savedDirHandle.requestPermission({ mode: 'readwrite' });
-                        if (newPermission === 'granted') {
-                            await loadFilesFromDirectory(savedDirHandle);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.log('No saved directory or permission denied:', err);
-                // Not an error, just means they need to select folder manually
-            }
-        })();
     </script>
 </body>
 </html>
