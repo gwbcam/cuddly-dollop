@@ -16,6 +16,53 @@
             font-family: Arial, sans-serif;
             padding: 10px;
             overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        body.scrollable-vertical {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        body.scrollable-horizontal {
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        body.dark-mode {
+            background-color: #1a1a1a;
+        }
+
+        body.dark-mode h1,
+        body.dark-mode #datetime {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .modal-content {
+            background-color: #2a2a2a;
+        }
+
+        body.dark-mode .close {
+            color: #aaa;
+        }
+
+        body.dark-mode .close:hover {
+            color: #fff;
+        }
+
+        body.dark-mode .modal h2,
+        body.dark-mode .modal-password-prompt h3 {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .modal-password-prompt input {
+            background-color: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .video-container {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
         .modal {
@@ -35,9 +82,11 @@
             padding: 20px;
             border-radius: 8px;
             width: 90%;
-            max-width: 1200px;
+            max-width: 720px;
+            max-height: 90vh;
             position: relative;
             box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            overflow-y: auto;
         }
 
         .close {
@@ -112,32 +161,147 @@
             display: none;
         }
 
+        .modal-form h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .modal-form iframe {
+            margin-bottom: 15px;
+        }
+
+        .collapsible-section {
+            margin-bottom: 15px;
+        }
+
+        .collapsible-header {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .collapsible-header:hover {
+            background-color: #45a049;
+        }
+
+        .collapsible-header .arrow {
+            transition: transform 0.3s;
+            font-size: 18px;
+        }
+
+        .collapsible-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            max-height: 1250px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+        }
+
+        body.dark-mode .collapsible-header {
+            background-color: #4CAF50;
+        }
+
+        body.dark-mode .collapsible-header:hover {
+            background-color: #45a049;
+        }
+
         .open-form-btn {
             position: fixed;
             bottom: 30px;
             right: 30px;
-            padding: 15px 30px;
-            background-color: #2196F3;
+            padding: 10px 20px;
+            background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 100;
         }
 
         .open-form-btn:hover {
-            background-color: #0b7dda;
+            background-color: #45a049;
             box-shadow: 0 6px 16px rgba(0,0,0,0.2);
         }
 
+        .fullscreen-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            padding: 10px 15px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+
+        .fullscreen-btn:hover {
+            background-color: #555;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .darkmode-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 90px;
+            padding: 10px 15px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+
+        .darkmode-btn:hover {
+            background-color: #555;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            max-width: 2400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         h1 {
-            text-align: center;
-            margin: 0 0 10px 0;
+            margin: 0;
             color: #333;
             font-size: 24px;
+        }
+
+        #datetime {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
         }
 
         .video-grid {
@@ -150,6 +314,28 @@
             height: calc(100vh - 65px);
         }
 
+        .video-grid.layout-1x6 {
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(6, auto);
+            height: auto;
+        }
+
+        .video-grid.layout-1x6 .video-container {
+            height: 96vh;
+            min-height: 600px;
+        }
+
+        .video-grid.layout-6x1 {
+            grid-template-columns: repeat(6, auto);
+            grid-template-rows: 1fr;
+            width: auto;
+        }
+
+        .video-grid.layout-6x1 .video-container {
+            width: 92vw;
+            min-width: 800px;
+        }
+
         .video-container {
             position: relative;
             width: 100%;
@@ -160,13 +346,48 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .video-container iframe {
+        .video-container iframe,
+        .video-container div:not(.status-dot) {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             border: none;
+        }
+
+        .status-dot {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #888;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: background-color 0.3s ease;
+        }
+
+        .status-dot.playing {
+            background-color: #4CAF50;
+        }
+
+        .status-dot.buffering {
+            background-color: #FFC107;
+        }
+
+        .status-dot.error {
+            background-color: #F44336;
+        }
+
+        .status-dot.paused {
+            background-color: #FF9800;
+        }
+
+        .status-dot.hidden {
+            display: none;
         }
 
         .form-section {
@@ -189,61 +410,221 @@
             border: none;
             border-radius: 4px;
         }
+
+        .refresh-settings {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        body.dark-mode .refresh-settings {
+            background-color: #333;
+        }
+
+        .refresh-settings h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        body.dark-mode .refresh-settings h3,
+        body.dark-mode .refresh-settings label,
+        body.dark-mode .refresh-settings p {
+            color: #e0e0e0;
+        }
+
+        .refresh-settings label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .refresh-settings input[type="number"] {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        body.dark-mode .refresh-settings input[type="number"] {
+            background-color: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .refresh-settings select {
+            background-color: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        .refresh-settings button {
+            padding: 8px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .refresh-settings button:hover {
+            background-color: #45a049;
+        }
+
+        .refresh-settings button.disable {
+            background-color: #f44336;
+        }
+
+        .refresh-settings button.disable:hover {
+            background-color: #da190b;
+        }
+
+        .refresh-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+
+        body.dark-mode .refresh-info {
+            background-color: #1b5e20;
+            color: #a5d6a7;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .status-log {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        body.dark-mode .status-log {
+            background-color: #333;
+        }
+
+        .status-log h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        body.dark-mode .status-log h3 {
+            color: #e0e0e0;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 5px;
+            background-color: white;
+            border-left: 3px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        body.dark-mode .log-entry {
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        .log-entry.playing {
+            border-left-color: #4CAF50;
+        }
+
+        .log-entry.buffering {
+            border-left-color: #FFC107;
+        }
+
+        .log-entry.error {
+            border-left-color: #F44336;
+        }
+
+        .log-entry.paused {
+            border-left-color: #FF9800;
+        }
+
+        .log-timestamp {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .log-clear-btn {
+            padding: 6px 12px;
+            background-color: #666;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .log-clear-btn:hover {
+            background-color: #555;
+        }
     </style>
 </head>
 <body>
-    <h1>Great Western Buildings Factory Live Feed</h1>
+    <div class="header-container">
+        <h1>Great Western Buildings Factory Live Feed</h1>
+        <div id="datetime"></div>
+    </div>
 
     <div class="video-grid">
         <div class="video-container">
-            <iframe
-                src="https://www.youtube.com/embed/B-X0MOIvGjk?autoplay=1&mute=1&controls=0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
+            <div class="status-dot"></div>
+            <div id="player-0"></div>
         </div>
 
         <div class="video-container">
-            <iframe
-                src="https://www.youtube.com/embed/KVrKK2tuse0?autoplay=1&mute=1&controls=0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
+            <div class="status-dot"></div>
+            <div id="player-1"></div>
         </div>
 
         <div class="video-container">
-            <iframe
-                src="https://www.youtube.com/embed/Cs_Hzs7Ej5c?autoplay=1&mute=1&controls=0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
+            <div class="status-dot"></div>
+            <div id="player-2"></div>
         </div>
 
         <div class="video-container">
-            <iframe
-                src="https://www.youtube.com/embed/eT-3IGdGzs0?autoplay=1&mute=1&controls=0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
+            <div class="status-dot"></div>
+            <div id="player-3"></div>
         </div>
 
         <div class="video-container">
-            <iframe
-                src="https://www.youtube.com/embed/7MkzmmsV8Xg?autoplay=1&mute=1&controls=0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
+            <div class="status-dot"></div>
+            <div id="player-4"></div>
         </div>
 
         <div class="video-container">
-            <iframe
-                src="https://www.youtube.com/embed/I7ZPMitfPJQ?autoplay=1&mute=1&controls=0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-            </iframe>
+            <div class="status-dot"></div>
+            <div id="player-5"></div>
         </div>
     </div>
 
+    <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">⛶</button>
+    <button class="darkmode-btn" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
     <button class="open-form-btn" onclick="openModal()">Admin</button>
 
     <div id="formModal" class="modal">
@@ -256,14 +637,154 @@
                 <div id="modal-error-message" class="error"></div>
             </div>
             <div id="modalForm" class="modal-form">
-                <h2>Remote Ticker Update</h2>
-                <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd-b3Ud6fPLv_FWhxXdjjfPGGA1spUTzQIJwPdFn6QBWtkUEA/viewform?embedded=true" height="700">Loading…</iframe>
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleStreamControls()">
+                        <span>Stream Controls</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="streamControlsContent">
+                        <div class="refresh-settings">
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="showStatusDots" onchange="toggleStatusDots()" checked style="margin-right: 8px; width: auto;">
+                                    Show Status Indicator Dots
+                                </label>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px;">Grid Layout:</label>
+                                <select id="layoutSelector" onchange="changeLayout()" style="padding: 8px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; background-color: white; cursor: pointer;">
+                                    <option value="3x2">3x2 (Default)</option>
+                                    <option value="1x6">1x6 (Single Column)</option>
+                                    <option value="6x1">6x1 (Single Row)</option>
+                                </select>
+                            </div>
+
+                            <h3>Auto-Refresh Settings</h3>
+                            <div class="input-row">
+                                <label>Min Minutes:</label>
+                                <input type="number" id="minRefresh" min="1" value="1380" placeholder="Min">
+                                <label>Max Minutes:</label>
+                                <input type="number" id="maxRefresh" min="1" value="1440" placeholder="Max">
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button onclick="enableAutoRefresh()" id="refreshBtn">Enable Auto-Refresh</button>
+                                <button onclick="manualRefreshStreams()">Refresh All Streams Now</button>
+                            </div>
+                            <div id="refreshInfo" class="refresh-info" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleStatusLog()">
+                        <span>Stream Status Log</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="statusLogContent">
+                        <div class="status-log">
+                            <div id="statusLogEntries"></div>
+                            <button onclick="clearStatusLog()" class="log-clear-btn">Clear Log</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleTickerForm()">
+                        <span>Remote Ticker Update</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="tickerFormContent">
+                        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd-b3Ud6fPLv_FWhxXdjjfPGGA1spUTzQIJwPdFn6QBWtkUEA/viewform?embedded=true" height="1200">Loading…</iframe>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         const CORRECT_PASSWORD = "GWB8890";
+
+        // YouTube Player API
+        const videoIds = [
+            'B-X0MOIvGjk',  // Plasma Table
+            'KVrKK2tuse0',  // Pull Through Welder
+            'Cs_Hzs7Ej5c',  // Fitting/Welding
+            'eT-3IGdGzs0',
+            '7MkzmmsV8Xg',
+            'I7ZPMitfPJQ'
+        ];
+
+        let players = [];
+
+        // Called automatically when YouTube API is ready
+        function onYouTubeIframeAPIReady() {
+            videoIds.forEach((videoId, index) => {
+                players[index] = new YT.Player(`player-${index}`, {
+                    videoId: videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,
+                        controls: 0,
+                        modestbranding: 1,
+                        rel: 0
+                    },
+                    events: {
+                        'onStateChange': (event) => onPlayerStateChange(event, index),
+                        'onError': (event) => onPlayerError(event, index)
+                    }
+                });
+            });
+        }
+
+        const streamNames = ['Plasma Table', 'Pull Through Welder', 'Fitting/Welding', 'Stream 4', 'Stream 5', 'Stream 6'];
+
+        function onPlayerStateChange(event, index) {
+            const statusDot = document.querySelectorAll('.status-dot')[index];
+
+            // Remove all status classes
+            statusDot.classList.remove('playing', 'buffering', 'paused', 'error');
+
+            let stateName = '';
+            let stateClass = '';
+
+            // YT.PlayerState values: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+            switch(event.data) {
+                case YT.PlayerState.PLAYING:
+                    statusDot.classList.add('playing');
+                    stateName = 'Playing';
+                    stateClass = 'playing';
+                    break;
+                case YT.PlayerState.BUFFERING:
+                    statusDot.classList.add('buffering');
+                    stateName = 'Buffering';
+                    stateClass = 'buffering';
+                    break;
+                case YT.PlayerState.PAUSED:
+                    statusDot.classList.add('paused');
+                    stateName = 'Paused';
+                    stateClass = 'paused';
+                    break;
+                case YT.PlayerState.ENDED:
+                    statusDot.classList.add('paused');
+                    stateName = 'Ended';
+                    stateClass = 'paused';
+                    break;
+            }
+
+            if (stateName) {
+                addStatusLogEntry(streamNames[index], stateName, stateClass);
+            }
+        }
+
+        function onPlayerError(event, index) {
+            const statusDot = document.querySelectorAll('.status-dot')[index];
+            statusDot.classList.remove('playing', 'buffering', 'paused');
+            statusDot.classList.add('error');
+
+            addStatusLogEntry(streamNames[index], 'Error', 'error');
+        }
 
         // Modal functions
         function openModal() {
@@ -281,6 +802,48 @@
             // Clear error message when closing
             document.getElementById('modal-error-message').textContent = '';
         }
+
+        function toggleStreamControls() {
+            const content = document.getElementById('streamControlsContent');
+            const headers = document.querySelectorAll('.collapsible-header');
+            const header = headers[0]; // First header is Stream Controls
+
+            content.classList.toggle('collapsed');
+            header.classList.toggle('collapsed');
+
+            // Save state to localStorage
+            const isCollapsed = content.classList.contains('collapsed');
+            localStorage.setItem('streamControlsCollapsed', isCollapsed);
+        }
+
+        function toggleStatusLog() {
+            const content = document.getElementById('statusLogContent');
+            const headers = document.querySelectorAll('.collapsible-header');
+            const header = headers[1]; // Second header is Stream Status Log
+
+            content.classList.toggle('collapsed');
+            header.classList.toggle('collapsed');
+
+            // Save state to localStorage
+            const isCollapsed = content.classList.contains('collapsed');
+            localStorage.setItem('statusLogCollapsed', isCollapsed);
+        }
+
+        function toggleTickerForm() {
+            const content = document.getElementById('tickerFormContent');
+            const headers = document.querySelectorAll('.collapsible-header');
+            const header = headers[2]; // Third header is Remote Ticker Update
+
+            content.classList.toggle('collapsed');
+            header.classList.toggle('collapsed');
+
+            // Save state to localStorage
+            const isCollapsed = content.classList.contains('collapsed');
+            localStorage.setItem('tickerFormCollapsed', isCollapsed);
+        }
+
+        // Sections always start expanded by default
+        // Collapsed state is saved but not restored on page load
 
         function checkModalPassword() {
             const input = document.getElementById('modal-password-input');
@@ -324,6 +887,454 @@
                 closeModal();
             }
         }
+
+        // Fullscreen toggle function
+        function toggleFullscreen() {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+                // Enter fullscreen
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { // Safari
+                    elem.webkitRequestFullscreen();
+                } else if (elem.mozRequestFullScreen) { // Firefox
+                    elem.mozRequestFullScreen();
+                } else if (elem.msRequestFullscreen) { // IE/Edge
+                    elem.msRequestFullscreen();
+                }
+            } else {
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            document.getElementById('datetime').textContent = now.toLocaleString('en-US', options);
+        }
+
+        // Update time immediately and then every second
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+
+            // Update button icon
+            const btn = document.querySelector('.darkmode-btn');
+            btn.textContent = isDarkMode ? '☀️' : '🌙';
+        }
+
+        // Load dark mode preference on page load
+        function loadDarkModePreference() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                const btn = document.querySelector('.darkmode-btn');
+                btn.textContent = '☀️';
+            }
+        }
+
+        // Load preference immediately
+        loadDarkModePreference();
+
+        // Auto-refresh functionality
+        let refreshTimer = null;
+        let nextRefreshTime = null;
+
+        function enableAutoRefresh() {
+            const minMinutes = parseInt(document.getElementById('minRefresh').value);
+            const maxMinutes = parseInt(document.getElementById('maxRefresh').value);
+
+            if (isNaN(minMinutes) || isNaN(maxMinutes) || minMinutes < 1 || maxMinutes < 1) {
+                alert('Please enter valid numbers for both fields.');
+                return;
+            }
+
+            if (minMinutes > maxMinutes) {
+                alert('Minimum minutes must be less than or equal to maximum minutes.');
+                return;
+            }
+
+            // Save settings
+            localStorage.setItem('autoRefreshEnabled', 'true');
+            localStorage.setItem('minRefreshMinutes', minMinutes);
+            localStorage.setItem('maxRefreshMinutes', maxMinutes);
+
+            // Schedule the refresh
+            scheduleRefresh(minMinutes, maxMinutes);
+
+            // Update button
+            const btn = document.getElementById('refreshBtn');
+            btn.textContent = 'Disable Auto-Refresh';
+            btn.className = 'disable';
+            btn.onclick = disableAutoRefresh;
+
+            // Show info
+            updateRefreshDisplay();
+        }
+
+        function disableAutoRefresh() {
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+                refreshTimer = null;
+            }
+
+            localStorage.setItem('autoRefreshEnabled', 'false');
+            nextRefreshTime = null;
+
+            // Update button
+            const btn = document.getElementById('refreshBtn');
+            btn.textContent = 'Enable Auto-Refresh';
+            btn.className = '';
+            btn.onclick = enableAutoRefresh;
+
+            // Hide info
+            document.getElementById('refreshInfo').style.display = 'none';
+        }
+
+        function scheduleRefresh(minMinutes, maxMinutes) {
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+            }
+
+            // Calculate random time between min and max (in milliseconds)
+            const minMs = minMinutes * 60 * 1000;
+            const maxMs = maxMinutes * 60 * 1000;
+            const randomMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+
+            // Set next refresh time
+            nextRefreshTime = new Date(Date.now() + randomMs);
+            localStorage.setItem('nextRefreshTime', nextRefreshTime.toISOString());
+
+            // Schedule the refresh
+            refreshTimer = setTimeout(() => {
+                refreshPlayers();
+            }, randomMs);
+
+            updateRefreshDisplay();
+        }
+
+        // Manual refresh triggered by user
+        function manualRefreshStreams() {
+            console.log('Manual refresh triggered by user');
+
+            // Destroy existing players
+            players.forEach((player, index) => {
+                if (player && typeof player.destroy === 'function') {
+                    player.destroy();
+                }
+            });
+
+            // Clear players array
+            players = [];
+
+            // Recreate all players
+            videoIds.forEach((videoId, index) => {
+                players[index] = new YT.Player(`player-${index}`, {
+                    videoId: videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,
+                        controls: 0,
+                        modestbranding: 1,
+                        rel: 0
+                    },
+                    events: {
+                        'onStateChange': (event) => onPlayerStateChange(event, index),
+                        'onError': (event) => onPlayerError(event, index)
+                    }
+                });
+            });
+        }
+
+        // Reload all video players without refreshing the page (auto-refresh)
+        function refreshPlayers() {
+            console.log('Auto-refreshing all video players...');
+
+            // Destroy existing players
+            players.forEach((player, index) => {
+                if (player && typeof player.destroy === 'function') {
+                    player.destroy();
+                }
+            });
+
+            // Clear players array
+            players = [];
+
+            // Recreate all players
+            videoIds.forEach((videoId, index) => {
+                players[index] = new YT.Player(`player-${index}`, {
+                    videoId: videoId,
+                    playerVars: {
+                        autoplay: 1,
+                        mute: 1,
+                        controls: 0,
+                        modestbranding: 1,
+                        rel: 0
+                    },
+                    events: {
+                        'onStateChange': (event) => onPlayerStateChange(event, index),
+                        'onError': (event) => onPlayerError(event, index)
+                    }
+                });
+            });
+
+            // Reschedule next refresh
+            const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1380;
+            const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 1440;
+            scheduleRefresh(minMinutes, maxMinutes);
+        }
+
+        function updateRefreshDisplay() {
+            const info = document.getElementById('refreshInfo');
+            if (nextRefreshTime) {
+                const timeStr = nextRefreshTime.toLocaleString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                info.textContent = `✓ Auto-refresh enabled. Next refresh: ${timeStr}`;
+                info.style.display = 'block';
+            }
+        }
+
+        // Load auto-refresh settings on page load
+        function loadAutoRefreshSettings() {
+            const enabled = localStorage.getItem('autoRefreshEnabled') === 'true';
+            const savedNextRefresh = localStorage.getItem('nextRefreshTime');
+
+            if (enabled) {
+                const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1380;
+                const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 1440;
+
+                document.getElementById('minRefresh').value = minMinutes;
+                document.getElementById('maxRefresh').value = maxMinutes;
+
+                // Check if there's a scheduled refresh from previous session
+                if (savedNextRefresh) {
+                    nextRefreshTime = new Date(savedNextRefresh);
+                    const now = new Date();
+
+                    if (nextRefreshTime > now) {
+                        // Resume the scheduled refresh
+                        const remainingMs = nextRefreshTime - now;
+                        refreshTimer = setTimeout(() => {
+                            refreshPlayers();
+                        }, remainingMs);
+
+                        // Update button state
+                        const btn = document.getElementById('refreshBtn');
+                        btn.textContent = 'Disable Auto-Refresh';
+                        btn.className = 'disable';
+                        btn.onclick = disableAutoRefresh;
+
+                        updateRefreshDisplay();
+                    } else {
+                        // Time has passed, schedule a new refresh
+                        scheduleRefresh(minMinutes, maxMinutes);
+
+                        const btn = document.getElementById('refreshBtn');
+                        btn.textContent = 'Disable Auto-Refresh';
+                        btn.className = 'disable';
+                        btn.onclick = disableAutoRefresh;
+                    }
+                } else {
+                    // No saved refresh time, schedule a new one
+                    scheduleRefresh(minMinutes, maxMinutes);
+
+                    const btn = document.getElementById('refreshBtn');
+                    btn.textContent = 'Disable Auto-Refresh';
+                    btn.className = 'disable';
+                    btn.onclick = disableAutoRefresh;
+                }
+            }
+        }
+
+        // Load settings on page load
+        loadAutoRefreshSettings();
+
+        // Toggle status dots visibility
+        function toggleStatusDots() {
+            const checkbox = document.getElementById('showStatusDots');
+            const dots = document.querySelectorAll('.status-dot');
+
+            dots.forEach(dot => {
+                if (checkbox.checked) {
+                    dot.classList.remove('hidden');
+                } else {
+                    dot.classList.add('hidden');
+                }
+            });
+
+            // Save preference
+            localStorage.setItem('showStatusDots', checkbox.checked);
+        }
+
+        // Load status dots preference on page load
+        function loadStatusDotsPreference() {
+            const showDots = localStorage.getItem('showStatusDots');
+            if (showDots === 'false') {
+                const checkbox = document.getElementById('showStatusDots');
+                if (checkbox) {
+                    checkbox.checked = false;
+                    toggleStatusDots();
+                }
+            }
+        }
+
+        // Load preference after a short delay to ensure DOM is ready
+        setTimeout(loadStatusDotsPreference, 100);
+
+        // Layout switcher
+        function changeLayout() {
+            const selector = document.getElementById('layoutSelector');
+            const layout = selector.value;
+            const videoGrid = document.querySelector('.video-grid');
+
+            // Remove all layout classes
+            videoGrid.classList.remove('layout-1x6', 'layout-6x1');
+            document.body.classList.remove('scrollable-vertical', 'scrollable-horizontal');
+
+            // Add selected layout class
+            if (layout !== '3x2') {
+                videoGrid.classList.add('layout-' + layout);
+            }
+
+            // Enable vertical scrolling for 1x6 layout
+            if (layout === '1x6') {
+                document.body.classList.add('scrollable-vertical');
+            }
+
+            // Enable horizontal scrolling for 6x1 layout
+            if (layout === '6x1') {
+                document.body.classList.add('scrollable-horizontal');
+            }
+
+            // Save preference
+            localStorage.setItem('gridLayout', layout);
+        }
+
+        // Load layout preference on page load
+        function loadLayoutPreference() {
+            const savedLayout = localStorage.getItem('gridLayout') || '3x2';
+            const selector = document.getElementById('layoutSelector');
+
+            if (selector) {
+                selector.value = savedLayout;
+                changeLayout();
+            }
+        }
+
+        // Load layout preference after a short delay
+        setTimeout(loadLayoutPreference, 100);
+
+        // Mobile orientation detection and auto-switching
+        function isMobileDevice() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+
+        function isLandscape() {
+            return window.matchMedia('(orientation: landscape)').matches;
+        }
+
+        function handleOrientationChange() {
+            // Only auto-switch for mobile devices
+            if (!isMobileDevice()) return;
+
+            const newLayout = isLandscape() ? '6x1' : '1x6';
+            const selector = document.getElementById('layoutSelector');
+
+            if (selector) {
+                selector.value = newLayout;
+                changeLayout();
+            }
+        }
+
+        // Listen for orientation changes
+        window.addEventListener('resize', handleOrientationChange);
+
+        // Set initial mobile layout after a short delay
+        setTimeout(() => {
+            if (isMobileDevice()) {
+                handleOrientationChange();
+            }
+        }, 150);
+
+        // Status log functionality
+        let statusLogEntries = [];
+        const MAX_LOG_ENTRIES = 50;
+
+        function addStatusLogEntry(streamName, status, statusClass) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const entry = {
+                time: timeString,
+                stream: streamName,
+                status: status,
+                class: statusClass
+            };
+
+            statusLogEntries.unshift(entry); // Add to beginning
+
+            // Limit to MAX_LOG_ENTRIES
+            if (statusLogEntries.length > MAX_LOG_ENTRIES) {
+                statusLogEntries = statusLogEntries.slice(0, MAX_LOG_ENTRIES);
+            }
+
+            updateStatusLogDisplay();
+        }
+
+        function updateStatusLogDisplay() {
+            const container = document.getElementById('statusLogEntries');
+            if (!container) return;
+
+            if (statusLogEntries.length === 0) {
+                container.innerHTML = '<div style="color: #999; font-style: italic; padding: 10px;">No events logged yet</div>';
+                return;
+            }
+
+            container.innerHTML = statusLogEntries.map(entry => `
+                <div class="log-entry ${entry.class}">
+                    <span class="log-timestamp">${entry.time}</span>
+                    <span>${entry.stream}: ${entry.status}</span>
+                </div>
+            `).join('');
+        }
+
+        function clearStatusLog() {
+            statusLogEntries = [];
+            updateStatusLogDisplay();
+        }
+
+        // Initialize log display
+        updateStatusLogDisplay();
     </script>
 </body>
 </html>
