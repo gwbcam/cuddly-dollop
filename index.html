@@ -24,11 +24,6 @@
             overflow-x: hidden;
         }
 
-        body.scrollable-horizontal {
-            overflow-x: auto;
-            overflow-y: hidden;
-        }
-
         body.dark-mode {
             background-color: #1a1a1a;
         }
@@ -347,17 +342,6 @@
 
         .video-grid.layout-1x6 .video-container {
             width: 100%;
-            aspect-ratio: 16/9;
-        }
-
-        .video-grid.layout-6x1 {
-            grid-template-columns: repeat(6, auto);
-            grid-template-rows: 1fr;
-            width: auto;
-        }
-
-        .video-grid.layout-6x1 .video-container {
-            width: 92vw;
             aspect-ratio: 16/9;
         }
 
@@ -681,16 +665,15 @@
                                 <select id="layoutSelector" onchange="changeLayout()" style="padding: 8px; border: 2px solid #ddd; border-radius: 4px; font-size: 14px; background-color: white; cursor: pointer;">
                                     <option value="3x2">3x2 (Default)</option>
                                     <option value="1x6">1x6 (Single Column)</option>
-                                    <option value="6x1">6x1 (Single Row)</option>
                                 </select>
                             </div>
 
                             <h3>Auto-Refresh Settings</h3>
                             <div class="input-row">
                                 <label>Min Minutes:</label>
-                                <input type="number" id="minRefresh" min="1" value="1380" placeholder="Min">
+                                <input type="number" id="minRefresh" min="1" value="1" placeholder="Min">
                                 <label>Max Minutes:</label>
-                                <input type="number" id="maxRefresh" min="1" value="1440" placeholder="Max">
+                                <input type="number" id="maxRefresh" min="1" value="10" placeholder="Max">
                             </div>
                             <div style="display: flex; gap: 10px; margin-top: 10px;">
                                 <button onclick="enableAutoRefresh()" id="refreshBtn">Enable Auto-Refresh</button>
@@ -715,16 +698,6 @@
                 </div>
 
                 <div class="collapsible-section">
-                    <div class="collapsible-header" onclick="toggleTickerForm()">
-                        <span>Remote Ticker Update</span>
-                        <span class="arrow">▼</span>
-                    </div>
-                    <div class="collapsible-content" id="tickerFormContent">
-                        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd-b3Ud6fPLv_FWhxXdjjfPGGA1spUTzQIJwPdFn6QBWtkUEA/viewform?embedded=true" height="1200">Loading…</iframe>
-                    </div>
-                </div>
-
-                <div class="collapsible-section">
                     <div class="collapsible-header" onclick="toggleQRCode()">
                         <span>Mobile QR Code</span>
                         <span class="arrow">▼</span>
@@ -734,6 +707,16 @@
                             <p>Scan this QR code with your mobile device to access the site:</p>
                             <img src="https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=https://gwbcam.github.io/cuddly-dollop/" alt="QR Code">
                         </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section">
+                    <div class="collapsible-header" onclick="toggleTickerForm()">
+                        <span>Remote Ticker Update</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="collapsible-content" id="tickerFormContent">
+                        <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSd-b3Ud6fPLv_FWhxXdjjfPGGA1spUTzQIJwPdFn6QBWtkUEA/viewform?embedded=true" height="1200">Loading…</iframe>
                     </div>
                 </div>
             </div>
@@ -867,23 +850,10 @@
             localStorage.setItem('statusLogCollapsed', isCollapsed);
         }
 
-        function toggleTickerForm() {
-            const content = document.getElementById('tickerFormContent');
-            const headers = document.querySelectorAll('.collapsible-header');
-            const header = headers[2]; // Third header is Remote Ticker Update
-
-            content.classList.toggle('collapsed');
-            header.classList.toggle('collapsed');
-
-            // Save state to localStorage
-            const isCollapsed = content.classList.contains('collapsed');
-            localStorage.setItem('tickerFormCollapsed', isCollapsed);
-        }
-
         function toggleQRCode() {
             const content = document.getElementById('qrCodeContent');
             const headers = document.querySelectorAll('.collapsible-header');
-            const header = headers[3]; // Fourth header is Mobile QR Code
+            const header = headers[2]; // Third header is Mobile QR Code
 
             content.classList.toggle('collapsed');
             header.classList.toggle('collapsed');
@@ -891,6 +861,19 @@
             // Save state to localStorage
             const isCollapsed = content.classList.contains('collapsed');
             localStorage.setItem('qrCodeCollapsed', isCollapsed);
+        }
+
+        function toggleTickerForm() {
+            const content = document.getElementById('tickerFormContent');
+            const headers = document.querySelectorAll('.collapsible-header');
+            const header = headers[3]; // Fourth header is Remote Ticker Update
+
+            content.classList.toggle('collapsed');
+            header.classList.toggle('collapsed');
+
+            // Save state to localStorage
+            const isCollapsed = content.classList.contains('collapsed');
+            localStorage.setItem('tickerFormCollapsed', isCollapsed);
         }
 
         // Sections always start expanded by default
@@ -1154,8 +1137,8 @@
             });
 
             // Reschedule next refresh
-            const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1380;
-            const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 1440;
+            const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1;
+            const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 10;
             scheduleRefresh(minMinutes, maxMinutes);
         }
 
@@ -1181,8 +1164,8 @@
             const savedNextRefresh = localStorage.getItem('nextRefreshTime');
 
             if (enabled) {
-                const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1380;
-                const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 1440;
+                const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1;
+                const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 10;
 
                 document.getElementById('minRefresh').value = minMinutes;
                 document.getElementById('maxRefresh').value = maxMinutes;
@@ -1269,8 +1252,8 @@
             const videoGrid = document.querySelector('.video-grid');
 
             // Remove all layout classes
-            videoGrid.classList.remove('layout-1x6', 'layout-6x1');
-            document.body.classList.remove('scrollable-vertical', 'scrollable-horizontal');
+            videoGrid.classList.remove('layout-1x6');
+            document.body.classList.remove('scrollable-vertical');
 
             // Add selected layout class
             if (layout !== '3x2') {
@@ -1282,18 +1265,19 @@
                 document.body.classList.add('scrollable-vertical');
             }
 
-            // Enable horizontal scrolling for 6x1 layout
-            if (layout === '6x1') {
-                document.body.classList.add('scrollable-horizontal');
-            }
-
             // Save preference
             localStorage.setItem('gridLayout', layout);
         }
 
         // Load layout preference on page load
         function loadLayoutPreference() {
-            const savedLayout = localStorage.getItem('gridLayout') || '3x2';
+            let savedLayout = localStorage.getItem('gridLayout') || '3x2';
+
+            // If saved layout is removed 6x1, default to 3x2
+            if (savedLayout === '6x1') {
+                savedLayout = '3x2';
+            }
+
             const selector = document.getElementById('layoutSelector');
 
             if (selector) {
@@ -1310,15 +1294,12 @@
             return window.matchMedia('(max-width: 768px)').matches;
         }
 
-        function isLandscape() {
-            return window.matchMedia('(orientation: landscape)').matches;
-        }
-
         function handleOrientationChange() {
             // Only auto-switch for mobile devices
             if (!isMobileDevice()) return;
 
-            const newLayout = isLandscape() ? '6x1' : '1x6';
+            // Always use 1x6 (vertical) layout for mobile
+            const newLayout = '1x6';
             const selector = document.getElementById('layoutSelector');
 
             if (selector) {
