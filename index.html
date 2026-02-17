@@ -334,10 +334,19 @@
             height: calc(100vh - 65px);
         }
 
+        .video-grid.layout-4x2 {
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
         .video-grid.layout-1x6 {
             grid-template-columns: 1fr;
             grid-template-rows: repeat(6, auto);
             height: auto;
+        }
+
+        .video-grid.layout-1x6.layout-1x8 {
+            grid-template-rows: repeat(8, auto);
         }
 
         .video-grid.layout-1x6 .video-container {
@@ -512,6 +521,32 @@
             color: #a5d6a7;
         }
 
+        .stream-source-info {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+
+        .stream-source-info.warning {
+            background-color: #fff3e0;
+            border-left-color: #FF9800;
+            color: #e65100;
+        }
+
+        body.dark-mode .stream-source-info {
+            background-color: #1b5e20;
+            color: #a5d6a7;
+        }
+
+        body.dark-mode .stream-source-info.warning {
+            background-color: #4e342e;
+            color: #ffcc80;
+        }
+
         .input-row {
             display: flex;
             align-items: center;
@@ -601,6 +636,7 @@
     </div>
 
     <div class="video-grid">
+        <!-- Primary 6 streams -->
         <div class="video-container">
             <div class="status-dot"></div>
             <div id="player-0"></div>
@@ -630,6 +666,17 @@
             <div class="status-dot"></div>
             <div id="player-5"></div>
         </div>
+
+        <!-- Extra 2 streams — hidden by default, shown when "Show All Streams" is enabled -->
+        <div class="video-container extra-stream" style="display: none;">
+            <div class="status-dot"></div>
+            <div id="player-6"></div>
+        </div>
+
+        <div class="video-container extra-stream" style="display: none;">
+            <div class="status-dot"></div>
+            <div id="player-7"></div>
+        </div>
     </div>
 
     <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">⛶</button>
@@ -653,10 +700,18 @@
                     </div>
                     <div class="collapsible-content" id="streamControlsContent">
                         <div class="refresh-settings">
+
                             <div style="margin-bottom: 20px;">
                                 <label style="display: flex; align-items: center; cursor: pointer;">
                                     <input type="checkbox" id="showStatusDots" onchange="toggleStatusDots()" checked style="margin-right: 8px; width: auto;">
                                     Show Status Indicator Dots
+                                </label>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="showAllStreamsCheckbox" onchange="toggleAllStreams()" style="margin-right: 8px; width: auto;">
+                                    Show All Streams (4x2 grid — includes educational streams)
                                 </label>
                             </div>
 
@@ -680,6 +735,7 @@
                                 <button onclick="manualRefreshStreams()">Refresh All Streams Now</button>
                             </div>
                             <div id="refreshInfo" class="refresh-info" style="display: none;"></div>
+                            <div id="streamSourceInfo" class="stream-source-info" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
@@ -726,52 +782,163 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         const CORRECT_PASSWORD = "GWB8890";
+        const YOUTUBE_API_KEY = "AIzaSyAHzyy1SOEUtfK2F7rf7y1TVxjh9x8t7js";
+        const CHANNEL_ID = "UC8cLsaZLF8g_JQCkcePRIug";
 
-        // YouTube Player API
-        const videoIds = [
-            'B-X0MOIvGjk',  // Plasma Table
-            'KVrKK2tuse0',  // Pull Through Welder
-            'Cs_Hzs7Ej5c',  // Fitting/Welding
+        // Fallback video IDs used if the YouTube API is unreachable
+        const fallbackVideoIds = [
+            'B-X0MOIvGjk',
+            'KVrKK2tuse0',
+            'Cs_Hzs7Ej5c',
             'eT-3IGdGzs0',
             '7MkzmmsV8Xg',
             'I7ZPMitfPJQ'
         ];
+        const fallbackStreamNames = ['Plasma Table', 'Pull Through Welder', 'Fitting/Welding', 'Stream 4', 'Stream 5', 'Stream 6'];
 
+        let liveStreams = [];
+        let videoIds = [...fallbackVideoIds];
+        let streamNames = [...fallbackStreamNames];
         let players = [];
+        let showAllStreams = localStorage.getItem('showAllStreams') === 'true';
 
-        // Called automatically when YouTube API is ready
-        function onYouTubeIframeAPIReady() {
-            videoIds.forEach((videoId, index) => {
-                players[index] = new YT.Player(`player-${index}`, {
-                    videoId: videoId,
-                    playerVars: {
-                        autoplay: 1,
-                        mute: 1,
-                        controls: 0,
-                        modestbranding: 1,
-                        rel: 0
-                    },
-                    events: {
-                        'onStateChange': (event) => onPlayerStateChange(event, index),
-                        'onError': (event) => onPlayerError(event, index)
-                    }
-                });
-            });
+        // ── YouTube API fetch ────────────────────────────────────────────────
+
+        async function fetchLiveStreams() {
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&eventType=live&type=video&order=date&maxResults=8&key=${YOUTUBE_API_KEY}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error('YouTube API error:', data.error.message);
+                    return [];
+                }
+
+                if (data.items && data.items.length > 0) {
+                    return data.items.map(item => ({
+                        id: item.id.videoId,
+                        title: item.snippet.title
+                    }));
+                }
+                return [];
+            } catch (err) {
+                console.error('Failed to fetch live streams:', err);
+                return [];
+            }
         }
 
-        const streamNames = ['Plasma Table', 'Pull Through Welder', 'Fitting/Welding', 'Stream 4', 'Stream 5', 'Stream 6'];
+        function updateStreamSourceInfo(fromAPI, count) {
+            const el = document.getElementById('streamSourceInfo');
+            if (!el) return;
+            if (fromAPI) {
+                el.className = 'stream-source-info';
+                el.textContent = `✓ Live streams loaded from YouTube API — ${count} stream${count !== 1 ? 's' : ''} currently live`;
+            } else {
+                el.className = 'stream-source-info warning';
+                el.textContent = '⚠ YouTube API unavailable — using fallback stream IDs';
+            }
+            el.style.display = 'block';
+        }
+
+        // ── Player initialisation ────────────────────────────────────────────
+
+        // Called automatically when the YouTube IFrame API script is ready
+        async function onYouTubeIframeAPIReady() {
+            liveStreams = await fetchLiveStreams();
+
+            if (liveStreams.length > 0) {
+                videoIds = liveStreams.map(s => s.id);
+                streamNames = liveStreams.map(s => s.title);
+                console.log(`Fetched ${liveStreams.length} live streams from YouTube API`);
+                updateStreamSourceInfo(true, liveStreams.length);
+            } else {
+                videoIds = [...fallbackVideoIds];
+                streamNames = [...fallbackStreamNames];
+                console.warn('API fetch failed or no live streams found. Using fallback IDs.');
+                updateStreamSourceInfo(false, 0);
+            }
+
+            initPlayers();
+        }
+
+        function initPlayers() {
+            // Destroy any existing players
+            players.forEach(player => {
+                if (player && typeof player.destroy === 'function') {
+                    player.destroy();
+                }
+            });
+            players = [];
+
+            const maxStreams = showAllStreams ? 8 : 6;
+            const count = Math.min(videoIds.length, maxStreams);
+
+            for (let i = 0; i < count; i++) {
+                if (videoIds[i]) {
+                    players[i] = new YT.Player(`player-${i}`, {
+                        videoId: videoIds[i],
+                        playerVars: {
+                            autoplay: 1,
+                            mute: 1,
+                            controls: 0,
+                            modestbranding: 1,
+                            rel: 0
+                        },
+                        events: {
+                            'onStateChange': (event) => onPlayerStateChange(event, i),
+                            'onError': (event) => onPlayerError(event, i)
+                        }
+                    });
+                }
+            }
+
+            applyStreamVisibility();
+        }
+
+        // ── Show All Streams toggle ──────────────────────────────────────────
+
+        function toggleAllStreams() {
+            showAllStreams = document.getElementById('showAllStreamsCheckbox').checked;
+            localStorage.setItem('showAllStreams', showAllStreams);
+            initPlayers();
+        }
+
+        function applyStreamVisibility() {
+            const grid = document.querySelector('.video-grid');
+            const extraContainers = document.querySelectorAll('.extra-stream');
+            const currentLayout = localStorage.getItem('gridLayout') || '3x2';
+
+            if (showAllStreams && videoIds.length > 6) {
+                extraContainers.forEach(c => c.style.display = '');
+                if (currentLayout === '1x6') {
+                    grid.classList.add('layout-1x8');
+                } else {
+                    grid.classList.add('layout-4x2');
+                }
+            } else {
+                extraContainers.forEach(c => c.style.display = 'none');
+                grid.classList.remove('layout-4x2');
+                grid.classList.remove('layout-1x8');
+            }
+
+            // Sync checkbox state whenever this runs
+            const checkbox = document.getElementById('showAllStreamsCheckbox');
+            if (checkbox) checkbox.checked = showAllStreams;
+        }
+
+        // ── Player state events ──────────────────────────────────────────────
 
         function onPlayerStateChange(event, index) {
             const statusDot = document.querySelectorAll('.status-dot')[index];
+            if (!statusDot) return;
 
-            // Remove all status classes
             statusDot.classList.remove('playing', 'buffering', 'paused', 'error');
 
             let stateName = '';
             let stateClass = '';
 
-            // YT.PlayerState values: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
-            switch(event.data) {
+            switch (event.data) {
                 case YT.PlayerState.PLAYING:
                     statusDot.classList.add('playing');
                     stateName = 'Playing';
@@ -795,22 +962,53 @@
             }
 
             if (stateName) {
-                addStatusLogEntry(streamNames[index], stateName, stateClass);
+                addStatusLogEntry(streamNames[index] || `Stream ${index + 1}`, stateName, stateClass);
             }
         }
 
         function onPlayerError(event, index) {
             const statusDot = document.querySelectorAll('.status-dot')[index];
+            if (!statusDot) return;
             statusDot.classList.remove('playing', 'buffering', 'paused');
             statusDot.classList.add('error');
-
-            addStatusLogEntry(streamNames[index], 'Error', 'error');
+            addStatusLogEntry(streamNames[index] || `Stream ${index + 1}`, 'Error', 'error');
         }
 
-        // Modal functions
+        // ── Refresh functions ────────────────────────────────────────────────
+
+        async function manualRefreshStreams() {
+            console.log('Manual refresh triggered');
+            const freshStreams = await fetchLiveStreams();
+            if (freshStreams.length > 0) {
+                liveStreams = freshStreams;
+                videoIds = liveStreams.map(s => s.id);
+                streamNames = liveStreams.map(s => s.title);
+                updateStreamSourceInfo(true, liveStreams.length);
+            }
+            initPlayers();
+        }
+
+        async function refreshPlayers() {
+            console.log('Auto-refreshing all video players...');
+            const freshStreams = await fetchLiveStreams();
+            if (freshStreams.length > 0) {
+                liveStreams = freshStreams;
+                videoIds = liveStreams.map(s => s.id);
+                streamNames = liveStreams.map(s => s.title);
+                updateStreamSourceInfo(true, liveStreams.length);
+            }
+            initPlayers();
+
+            // Reschedule next auto-refresh
+            const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1;
+            const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 10;
+            scheduleRefresh(minMinutes, maxMinutes);
+        }
+
+        // ── Modal functions ──────────────────────────────────────────────────
+
         function openModal() {
             document.getElementById('formModal').style.display = 'block';
-            // Check if already authenticated in this session
             if (sessionStorage.getItem('tickerAuthenticated') === 'true') {
                 showModalForm();
             } else {
@@ -820,64 +1018,44 @@
 
         function closeModal() {
             document.getElementById('formModal').style.display = 'none';
-            // Clear error message when closing
             document.getElementById('modal-error-message').textContent = '';
         }
 
         function toggleStreamControls() {
             const content = document.getElementById('streamControlsContent');
             const headers = document.querySelectorAll('.collapsible-header');
-            const header = headers[0]; // First header is Stream Controls
-
+            const header = headers[0];
             content.classList.toggle('collapsed');
             header.classList.toggle('collapsed');
-
-            // Save state to localStorage
-            const isCollapsed = content.classList.contains('collapsed');
-            localStorage.setItem('streamControlsCollapsed', isCollapsed);
+            localStorage.setItem('streamControlsCollapsed', content.classList.contains('collapsed'));
         }
 
         function toggleStatusLog() {
             const content = document.getElementById('statusLogContent');
             const headers = document.querySelectorAll('.collapsible-header');
-            const header = headers[1]; // Second header is Stream Status Log
-
+            const header = headers[1];
             content.classList.toggle('collapsed');
             header.classList.toggle('collapsed');
-
-            // Save state to localStorage
-            const isCollapsed = content.classList.contains('collapsed');
-            localStorage.setItem('statusLogCollapsed', isCollapsed);
+            localStorage.setItem('statusLogCollapsed', content.classList.contains('collapsed'));
         }
 
         function toggleQRCode() {
             const content = document.getElementById('qrCodeContent');
             const headers = document.querySelectorAll('.collapsible-header');
-            const header = headers[2]; // Third header is Mobile QR Code
-
+            const header = headers[2];
             content.classList.toggle('collapsed');
             header.classList.toggle('collapsed');
-
-            // Save state to localStorage
-            const isCollapsed = content.classList.contains('collapsed');
-            localStorage.setItem('qrCodeCollapsed', isCollapsed);
+            localStorage.setItem('qrCodeCollapsed', content.classList.contains('collapsed'));
         }
 
         function toggleTickerForm() {
             const content = document.getElementById('tickerFormContent');
             const headers = document.querySelectorAll('.collapsible-header');
-            const header = headers[3]; // Fourth header is Remote Ticker Update
-
+            const header = headers[3];
             content.classList.toggle('collapsed');
             header.classList.toggle('collapsed');
-
-            // Save state to localStorage
-            const isCollapsed = content.classList.contains('collapsed');
-            localStorage.setItem('tickerFormCollapsed', isCollapsed);
+            localStorage.setItem('tickerFormCollapsed', content.classList.contains('collapsed'));
         }
-
-        // Sections always start expanded by default
-        // Collapsed state is saved but not restored on page load
 
         function checkModalPassword() {
             const input = document.getElementById('modal-password-input');
@@ -896,7 +1074,6 @@
         function showModalPassword() {
             document.getElementById('modalPasswordPrompt').style.display = 'flex';
             document.getElementById('modalForm').style.display = 'none';
-            // Focus on password input
             setTimeout(() => {
                 document.getElementById('modal-password-input').focus();
             }, 100);
@@ -905,96 +1082,68 @@
         function showModalForm() {
             document.getElementById('modalPasswordPrompt').style.display = 'none';
             document.getElementById('modalForm').style.display = 'block';
+            // Sync checkbox to current state
+            const checkbox = document.getElementById('showAllStreamsCheckbox');
+            if (checkbox) checkbox.checked = showAllStreams;
         }
 
-        // Allow Enter key to submit password in modal
         document.getElementById('modal-password-input')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                checkModalPassword();
-            }
+            if (e.key === 'Enter') checkModalPassword();
         });
 
-        // Close modal when clicking outside of it
         window.onclick = function(event) {
             const modal = document.getElementById('formModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
+            if (event.target === modal) closeModal();
+        };
 
-        // Fullscreen toggle function
+        // ── Fullscreen ───────────────────────────────────────────────────────
+
         function toggleFullscreen() {
             if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
-                // Enter fullscreen
                 const elem = document.documentElement;
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen();
-                } else if (elem.webkitRequestFullscreen) { // Safari
-                    elem.webkitRequestFullscreen();
-                } else if (elem.mozRequestFullScreen) { // Firefox
-                    elem.mozRequestFullScreen();
-                } else if (elem.msRequestFullscreen) { // IE/Edge
-                    elem.msRequestFullscreen();
-                }
+                if (elem.requestFullscreen) elem.requestFullscreen();
+                else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+                else if (elem.mozRequestFullScreen) elem.mozRequestFullScreen();
+                else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
             } else {
-                // Exit fullscreen
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
             }
         }
 
-        // Update date and time
+        // ── Date / time ──────────────────────────────────────────────────────
+
         function updateDateTime() {
             const now = new Date();
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            };
-            document.getElementById('datetime').textContent = now.toLocaleString('en-US', options);
+            document.getElementById('datetime').textContent = now.toLocaleString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+            });
         }
-
-        // Update time immediately and then every second
         updateDateTime();
         setInterval(updateDateTime, 1000);
 
-        // Dark mode toggle
+        // ── Dark mode ────────────────────────────────────────────────────────
+
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
             localStorage.setItem('darkMode', isDarkMode);
-
-            // Update button icon
-            const btn = document.querySelector('.darkmode-btn');
-            btn.textContent = isDarkMode ? '☀️' : '🌙';
+            document.querySelector('.darkmode-btn').textContent = isDarkMode ? '☀️' : '🌙';
         }
 
-        // Load dark mode preference on page load
         function loadDarkModePreference() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            if (isDarkMode) {
+            if (localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
-                const btn = document.querySelector('.darkmode-btn');
-                btn.textContent = '☀️';
+                document.querySelector('.darkmode-btn').textContent = '☀️';
             }
         }
-
-        // Load preference immediately
         loadDarkModePreference();
 
-        // Auto-refresh functionality
+        // ── Auto-refresh ─────────────────────────────────────────────────────
+
         let refreshTimer = null;
         let nextRefreshTime = null;
 
@@ -1006,27 +1155,22 @@
                 alert('Please enter valid numbers for both fields.');
                 return;
             }
-
             if (minMinutes > maxMinutes) {
                 alert('Minimum minutes must be less than or equal to maximum minutes.');
                 return;
             }
 
-            // Save settings
             localStorage.setItem('autoRefreshEnabled', 'true');
             localStorage.setItem('minRefreshMinutes', minMinutes);
             localStorage.setItem('maxRefreshMinutes', maxMinutes);
 
-            // Schedule the refresh
             scheduleRefresh(minMinutes, maxMinutes);
 
-            // Update button
             const btn = document.getElementById('refreshBtn');
             btn.textContent = 'Disable Auto-Refresh';
             btn.className = 'disable';
             btn.onclick = disableAutoRefresh;
 
-            // Show info
             updateRefreshDisplay();
         }
 
@@ -1035,130 +1179,43 @@
                 clearTimeout(refreshTimer);
                 refreshTimer = null;
             }
-
             localStorage.setItem('autoRefreshEnabled', 'false');
             nextRefreshTime = null;
 
-            // Update button
             const btn = document.getElementById('refreshBtn');
             btn.textContent = 'Enable Auto-Refresh';
             btn.className = '';
             btn.onclick = enableAutoRefresh;
 
-            // Hide info
             document.getElementById('refreshInfo').style.display = 'none';
         }
 
         function scheduleRefresh(minMinutes, maxMinutes) {
-            if (refreshTimer) {
-                clearTimeout(refreshTimer);
-            }
+            if (refreshTimer) clearTimeout(refreshTimer);
 
-            // Calculate random time between min and max (in milliseconds)
             const minMs = minMinutes * 60 * 1000;
             const maxMs = maxMinutes * 60 * 1000;
             const randomMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
 
-            // Set next refresh time
             nextRefreshTime = new Date(Date.now() + randomMs);
             localStorage.setItem('nextRefreshTime', nextRefreshTime.toISOString());
 
-            // Schedule the refresh
-            refreshTimer = setTimeout(() => {
-                refreshPlayers();
-            }, randomMs);
-
+            refreshTimer = setTimeout(() => { refreshPlayers(); }, randomMs);
             updateRefreshDisplay();
-        }
-
-        // Manual refresh triggered by user
-        function manualRefreshStreams() {
-            console.log('Manual refresh triggered by user');
-
-            // Destroy existing players
-            players.forEach((player, index) => {
-                if (player && typeof player.destroy === 'function') {
-                    player.destroy();
-                }
-            });
-
-            // Clear players array
-            players = [];
-
-            // Recreate all players
-            videoIds.forEach((videoId, index) => {
-                players[index] = new YT.Player(`player-${index}`, {
-                    videoId: videoId,
-                    playerVars: {
-                        autoplay: 1,
-                        mute: 1,
-                        controls: 0,
-                        modestbranding: 1,
-                        rel: 0
-                    },
-                    events: {
-                        'onStateChange': (event) => onPlayerStateChange(event, index),
-                        'onError': (event) => onPlayerError(event, index)
-                    }
-                });
-            });
-        }
-
-        // Reload all video players without refreshing the page (auto-refresh)
-        function refreshPlayers() {
-            console.log('Auto-refreshing all video players...');
-
-            // Destroy existing players
-            players.forEach((player, index) => {
-                if (player && typeof player.destroy === 'function') {
-                    player.destroy();
-                }
-            });
-
-            // Clear players array
-            players = [];
-
-            // Recreate all players
-            videoIds.forEach((videoId, index) => {
-                players[index] = new YT.Player(`player-${index}`, {
-                    videoId: videoId,
-                    playerVars: {
-                        autoplay: 1,
-                        mute: 1,
-                        controls: 0,
-                        modestbranding: 1,
-                        rel: 0
-                    },
-                    events: {
-                        'onStateChange': (event) => onPlayerStateChange(event, index),
-                        'onError': (event) => onPlayerError(event, index)
-                    }
-                });
-            });
-
-            // Reschedule next refresh
-            const minMinutes = parseInt(localStorage.getItem('minRefreshMinutes')) || 1;
-            const maxMinutes = parseInt(localStorage.getItem('maxRefreshMinutes')) || 10;
-            scheduleRefresh(minMinutes, maxMinutes);
         }
 
         function updateRefreshDisplay() {
             const info = document.getElementById('refreshInfo');
             if (nextRefreshTime) {
                 const timeStr = nextRefreshTime.toLocaleString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
+                    weekday: 'short', month: 'short', day: 'numeric',
+                    hour: 'numeric', minute: '2-digit', hour12: true
                 });
                 info.textContent = `✓ Auto-refresh enabled. Next refresh: ${timeStr}`;
                 info.style.display = 'block';
             }
         }
 
-        // Load auto-refresh settings on page load
         function loadAutoRefreshSettings() {
             const enabled = localStorage.getItem('autoRefreshEnabled') === 'true';
             const savedNextRefresh = localStorage.getItem('nextRefreshTime');
@@ -1170,70 +1227,39 @@
                 document.getElementById('minRefresh').value = minMinutes;
                 document.getElementById('maxRefresh').value = maxMinutes;
 
-                // Check if there's a scheduled refresh from previous session
+                const btn = document.getElementById('refreshBtn');
+                btn.textContent = 'Disable Auto-Refresh';
+                btn.className = 'disable';
+                btn.onclick = disableAutoRefresh;
+
                 if (savedNextRefresh) {
                     nextRefreshTime = new Date(savedNextRefresh);
-                    const now = new Date();
-
-                    if (nextRefreshTime > now) {
-                        // Resume the scheduled refresh
-                        const remainingMs = nextRefreshTime - now;
-                        refreshTimer = setTimeout(() => {
-                            refreshPlayers();
-                        }, remainingMs);
-
-                        // Update button state
-                        const btn = document.getElementById('refreshBtn');
-                        btn.textContent = 'Disable Auto-Refresh';
-                        btn.className = 'disable';
-                        btn.onclick = disableAutoRefresh;
-
+                    const remainingMs = nextRefreshTime - new Date();
+                    if (remainingMs > 0) {
+                        refreshTimer = setTimeout(() => { refreshPlayers(); }, remainingMs);
                         updateRefreshDisplay();
                     } else {
-                        // Time has passed, schedule a new refresh
                         scheduleRefresh(minMinutes, maxMinutes);
-
-                        const btn = document.getElementById('refreshBtn');
-                        btn.textContent = 'Disable Auto-Refresh';
-                        btn.className = 'disable';
-                        btn.onclick = disableAutoRefresh;
                     }
                 } else {
-                    // No saved refresh time, schedule a new one
                     scheduleRefresh(minMinutes, maxMinutes);
-
-                    const btn = document.getElementById('refreshBtn');
-                    btn.textContent = 'Disable Auto-Refresh';
-                    btn.className = 'disable';
-                    btn.onclick = disableAutoRefresh;
                 }
             }
         }
-
-        // Load settings on page load
         loadAutoRefreshSettings();
 
-        // Toggle status dots visibility
+        // ── Status dots ──────────────────────────────────────────────────────
+
         function toggleStatusDots() {
             const checkbox = document.getElementById('showStatusDots');
-            const dots = document.querySelectorAll('.status-dot');
-
-            dots.forEach(dot => {
-                if (checkbox.checked) {
-                    dot.classList.remove('hidden');
-                } else {
-                    dot.classList.add('hidden');
-                }
+            document.querySelectorAll('.status-dot').forEach(dot => {
+                dot.classList.toggle('hidden', !checkbox.checked);
             });
-
-            // Save preference
             localStorage.setItem('showStatusDots', checkbox.checked);
         }
 
-        // Load status dots preference on page load
         function loadStatusDotsPreference() {
-            const showDots = localStorage.getItem('showStatusDots');
-            if (showDots === 'false') {
+            if (localStorage.getItem('showStatusDots') === 'false') {
                 const checkbox = document.getElementById('showStatusDots');
                 if (checkbox) {
                     checkbox.checked = false;
@@ -1241,117 +1267,82 @@
                 }
             }
         }
-
-        // Load preference after a short delay to ensure DOM is ready
         setTimeout(loadStatusDotsPreference, 100);
 
-        // Layout switcher
+        // ── Layout switcher ──────────────────────────────────────────────────
+
         function changeLayout() {
             const selector = document.getElementById('layoutSelector');
             const layout = selector.value;
             const videoGrid = document.querySelector('.video-grid');
 
-            // Remove all layout classes
-            videoGrid.classList.remove('layout-1x6');
+            videoGrid.classList.remove('layout-1x6', 'layout-4x2', 'layout-1x8');
             document.body.classList.remove('scrollable-vertical');
 
-            // Add selected layout class
-            if (layout !== '3x2') {
-                videoGrid.classList.add('layout-' + layout);
-            }
-
-            // Enable vertical scrolling for 1x6 layout
             if (layout === '1x6') {
+                videoGrid.classList.add('layout-1x6');
                 document.body.classList.add('scrollable-vertical');
             }
 
-            // Save preference
             localStorage.setItem('gridLayout', layout);
+
+            // Re-apply stream visibility so 4x2/1x8 is correct for the new layout
+            applyStreamVisibility();
         }
 
-        // Load layout preference on page load
         function loadLayoutPreference() {
             let savedLayout = localStorage.getItem('gridLayout') || '3x2';
-
-            // If saved layout is removed 6x1, default to 3x2
-            if (savedLayout === '6x1') {
-                savedLayout = '3x2';
-            }
+            if (savedLayout === '6x1') savedLayout = '3x2'; // handle old value
 
             const selector = document.getElementById('layoutSelector');
-
             if (selector) {
                 selector.value = savedLayout;
                 changeLayout();
             }
         }
-
-        // Load layout preference after a short delay
         setTimeout(loadLayoutPreference, 100);
 
-        // Mobile orientation detection and auto-switching
+        // ── Mobile orientation ───────────────────────────────────────────────
+
         function isMobileDevice() {
             return window.matchMedia('(max-width: 768px)').matches;
         }
 
         function handleOrientationChange() {
-            // Only auto-switch for mobile devices
             if (!isMobileDevice()) return;
-
-            // Always use 1x6 (vertical) layout for mobile
-            const newLayout = '1x6';
             const selector = document.getElementById('layoutSelector');
-
             if (selector) {
-                selector.value = newLayout;
+                selector.value = '1x6';
                 changeLayout();
             }
         }
 
-        // Listen for orientation changes
         window.addEventListener('resize', handleOrientationChange);
+        setTimeout(() => { if (isMobileDevice()) handleOrientationChange(); }, 150);
 
-        // Set initial mobile layout after a short delay
-        setTimeout(() => {
-            if (isMobileDevice()) {
-                handleOrientationChange();
-            }
-        }, 150);
+        // ── Status log ───────────────────────────────────────────────────────
 
-        // Status log functionality
         let statusLogEntries = [];
         const MAX_LOG_ENTRIES = 50;
 
         function addStatusLogEntry(streamName, status, statusClass) {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-            const entry = {
-                time: timeString,
-                stream: streamName,
-                status: status,
-                class: statusClass
-            };
-
-            statusLogEntries.unshift(entry); // Add to beginning
-
-            // Limit to MAX_LOG_ENTRIES
+            const timeString = new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            statusLogEntries.unshift({ time: timeString, stream: streamName, status, class: statusClass });
             if (statusLogEntries.length > MAX_LOG_ENTRIES) {
                 statusLogEntries = statusLogEntries.slice(0, MAX_LOG_ENTRIES);
             }
-
             updateStatusLogDisplay();
         }
 
         function updateStatusLogDisplay() {
             const container = document.getElementById('statusLogEntries');
             if (!container) return;
-
             if (statusLogEntries.length === 0) {
                 container.innerHTML = '<div style="color: #999; font-style: italic; padding: 10px;">No events logged yet</div>';
                 return;
             }
-
             container.innerHTML = statusLogEntries.map(entry => `
                 <div class="log-entry ${entry.class}">
                     <span class="log-timestamp">${entry.time}</span>
@@ -1365,7 +1356,6 @@
             updateStatusLogDisplay();
         }
 
-        // Initialize log display
         updateStatusLogDisplay();
     </script>
 </body>
