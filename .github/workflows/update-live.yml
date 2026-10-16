@@ -1,0 +1,151 @@
+# Checks which Great Western Buildings cameras are live on YouTube and
+# publishes the answer as live.json next to index.html on GitHub Pages.
+#
+# The YouTube API key is stored in this repo's Settings → Secrets → Actions
+# as YT_API_KEY, so it never appears in the website or the code.
+#
+# Runs every 10 minutes, whenever index.html (or anything) is changed on
+# main, and on demand from the Actions tab ("Run workflow").
+ 
+name: Update live streams
+ 
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+ 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+ 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+ 
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.live.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Ask YouTube which streams are live
+        id: live
+        uses: actions/github-script@v7
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+          SITE_URL: https://gwbcam.github.io/cuddly-dollop/
+        with:
+          script: |
+            const fs = require('fs');
+ 
+            const CHANNEL_ID = 'UC8cLsaZLF8g_JQCkcePRIug';
+            // Unlisted streams never show up in the channel's uploads list.
+            // Add their video IDs here (the part after "watch?v=" or "live/").
+            const PINNED_VIDEO_IDS = [];
+            // Pages of 50 uploads to scan. Camera streams can run for months
+            // while newer videos get posted on top of them. 8 pages = 400
+            // videos, about 16 quota units per check (the daily limit is 10,000).
+            const MAX_UPLOAD_PAGES = 8;
+ 
+            const key = process.env.YT_API_KEY;
+            if (!key) {
+              core.setFailed('The YT_API_KEY secret is missing. Add it under Settings → Secrets and variables → Actions.');
+              return;
+            }
+ 
+            const api = 'https://www.googleapis.com/youtube/v3';
+            const uploads = 'UU' + CHANNEL_ID.slice(2);
+            async function getJSON(url) {
+              const res = await fetch(url);
+              const json = await res.json();
+              if (json.error) throw new Error(json.error.message);
+              return json;
+            }
+ 
+            // What the website is currently showing
+            let previous = null;
+            try {
+              const res = await fetch(`${process.env.SITE_URL}live.json?t=${Date.now()}`);
+              if (res.ok) previous = await res.json();
+            } catch (e) {}
+ 
+            let streams;
+            try {
+              const ids = new Set(PINNED_VIDEO_IDS);
+              let pageToken = '';
+              for (let page = 0; page < MAX_UPLOAD_PAGES; page++) {
+                const pl = await getJSON(`${api}/playlistItems?part=contentDetails&playlistId=${uploads}&maxResults=50${pageToken ? `&pageToken=${pageToken}` : ''}&key=${key}`);
+                for (const item of pl.items || []) ids.add(item.contentDetails.videoId);
+                if (!pl.nextPageToken) break;
+                pageToken = pl.nextPageToken;
+              }
+ 
+              const all = [...ids];
+              const videos = [];
+              for (let i = 0; i < all.length; i += 50) {
+                const v = await getJSON(`${api}/videos?part=snippet,liveStreamingDetails&id=${all.slice(i, i + 50).join(',')}&key=${key}`);
+                videos.push(...(v.items || []));
+              }
+ 
+              streams = videos
+                .filter(v => v.snippet.liveBroadcastContent === 'live')
+                // Oldest broadcast first, so cameras keep their grid slot
+                .sort((a, b) => ((a.liveStreamingDetails || {}).actualStartTime || '')
+                  .localeCompare((b.liveStreamingDetails || {}).actualStartTime || ''))
+                .slice(0, 8)
+                .map(v => ({ id: v.id, title: v.snippet.title }));
+            } catch (e) {
+              core.warning(`YouTube check failed: ${e.message}`);
+              if (context.eventName === 'schedule' || !previous) {
+                // Leave the website as it is and try again next run
+                core.setOutput('changed', 'false');
+                if (!previous) core.setFailed('YouTube check failed and there is no earlier live.json to fall back on.');
+                return;
+              }
+              streams = previous.streams; // code was updated: redeploy with last known list
+            }
+ 
+            const same = !!previous && JSON.stringify(previous.streams) === JSON.stringify(streams);
+            const out = {
+              streams,
+              changed_at: same ? previous.changed_at : new Date().toISOString(),
+            };
+            fs.writeFileSync('live.json', JSON.stringify(out, null, 2) + '\n');
+ 
+            // Scheduled runs only republish when the list changed;
+            // code changes and manual runs always republish.
+            const changed = context.eventName !== 'schedule' || !same;
+            core.setOutput('changed', String(changed));
+            core.info(`${streams.length} live: ${streams.map(s => s.title).join(' | ') || '(none)'}`);
+            core.info(changed ? 'Publishing to the website.' : 'No change — website left as is.');
+ 
+      - name: Gather website files
+        if: steps.live.outputs.changed == 'true'
+        run: |
+          mkdir _site
+          rsync -a --exclude '.git' --exclude '.github' --exclude '_site' ./ _site/
+ 
+      - uses: actions/configure-pages@v5
+        if: steps.live.outputs.changed == 'true'
+ 
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.live.outputs.changed == 'true'
+        with:
+          path: _site
+ 
+  deploy:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+ 
