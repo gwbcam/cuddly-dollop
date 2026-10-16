@@ -374,6 +374,16 @@
             border: none;
         }
 
+        .video-container .offline-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-size: 16px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
         .status-dot {
             position: absolute;
             top: 10px;
@@ -785,16 +795,32 @@
         const YOUTUBE_API_KEY = "AIzaSyAHzyy1SOEUtfK2F7rf7y1TVxjh9x8t7js";
         const CHANNEL_ID = "UC8cLsaZLF8g_JQCkcePRIug";
 
-        // Fallback video IDs used if the YouTube API is unreachable
-        const fallbackVideoIds = [
-            'B-X0MOIvGjk',
-            'KVrKK2tuse0',
-            'Cs_Hzs7Ej5c',
-            'eT-3IGdGzs0',
-            '7MkzmmsV8Xg',
-            'I7ZPMitfPJQ'
+        // Channel "uploads" playlist = channel ID with "UC" swapped for "UU".
+        // Live broadcasts appear here as soon as they start, unlike the search
+        // endpoint, whose index can miss live streams for days.
+        const UPLOADS_PLAYLIST_ID = 'UU' + CHANNEL_ID.slice(2);
+
+        // How many 50-video pages of the uploads list to scan. Camera streams
+        // can run for months while tutorials keep getting posted on top of
+        // them, so a long-running stream can sit deep in the list.
+        // 8 pages = 400 videos; costs ~16 quota units per check.
+        const MAX_UPLOAD_PAGES = 8;
+
+        // Optional: stream IDs that are always checked and shown if live —
+        // e.g. unlisted streams, which never appear in the uploads list.
+        // Paste the part after "watch?v=" (or after "live/") in a stream's URL.
+        const PINNED_VIDEO_IDS = [
         ];
-        const fallbackStreamNames = ['Plasma Table', 'Pull Through Welder', 'Fitting/Welding', 'Stream 4', 'Stream 5', 'Stream 6'];
+
+        // Fallback video IDs used only if the YouTube API is unreachable.
+        // These go stale whenever a camera's broadcast is restarted (it gets a
+        // new ID) — last updated Oct 2026 from the streams started 2026-09-23.
+        const fallbackVideoIds = [
+            'jvVpvaR29tU',
+            'zlC8LvTP05Y',
+            '3q-o_qtyOmk'
+        ];
+        const fallbackStreamNames = ['Factory Floor (Fitting and Welding)', 'Welding Area (Fitting and Welding)', 'Beam Fabrication - PTW'];
 
         let liveStreams = [];
         let videoIds = [...fallbackVideoIds];
@@ -804,34 +830,95 @@
 
         // ── YouTube API fetch ────────────────────────────────────────────────
 
+        // Returns an array of {id, title} for broadcasts that are live right now,
+        // or null if the API couldn't be reached (so callers can tell
+        // "nothing is live" apart from "we don't know").
+        //
+        // Uses playlistItems + videos.list (1 quota unit each) instead of
+        // search?eventType=live (100 units, and its index regularly misses
+        // live streams entirely).
         async function fetchLiveStreams() {
-            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${CHANNEL_ID}&eventType=live&type=video&order=date&maxResults=8&key=${YOUTUBE_API_KEY}`;
+            const api = 'https://www.googleapis.com/youtube/v3';
             try {
-                const response = await fetch(url);
-                const data = await response.json();
+                // 1. Collect video IDs from the uploads list (newest first).
+                const ids = new Set(PINNED_VIDEO_IDS);
+                let pageToken = '';
+                for (let page = 0; page < MAX_UPLOAD_PAGES; page++) {
+                    const plRes = await fetch(`${api}/playlistItems?part=contentDetails&playlistId=${UPLOADS_PLAYLIST_ID}&maxResults=50${pageToken ? `&pageToken=${pageToken}` : ''}&key=${YOUTUBE_API_KEY}`);
+                    const pl = await plRes.json();
+                    if (pl.error) {
+                        console.error('YouTube API error (playlistItems):', pl.error.message);
+                        // Fail only if nothing came back at all
+                        if (ids.size === 0) return null;
+                        break;
+                    }
+                    (pl.items || []).forEach(item => {
+                        if (item.contentDetails && item.contentDetails.videoId) ids.add(item.contentDetails.videoId);
+                    });
+                    if (!pl.nextPageToken) break;
+                    pageToken = pl.nextPageToken;
+                }
+                if (ids.size === 0) return [];
 
-                if (data.error) {
-                    console.error('YouTube API error:', data.error.message);
-                    return [];
+                // 2. Look up live status, 50 IDs per request (API limit).
+                const allIds = [...ids];
+                const videos = [];
+                for (let i = 0; i < allIds.length; i += 50) {
+                    const chunk = allIds.slice(i, i + 50);
+                    const vRes = await fetch(`${api}/videos?part=snippet,liveStreamingDetails&id=${chunk.join(',')}&key=${YOUTUBE_API_KEY}`);
+                    const v = await vRes.json();
+                    if (v.error) {
+                        console.error('YouTube API error (videos):', v.error.message);
+                        if (videos.length === 0) return null;
+                        break;
+                    }
+                    videos.push(...(v.items || []));
                 }
 
-                if (data.items && data.items.length > 0) {
-                    return data.items.map(item => ({
-                        id: item.id.videoId,
+                return videos
+                    .filter(item => item.snippet.liveBroadcastContent === 'live')
+                    // Oldest broadcast first, so each camera keeps the same
+                    // grid slot across refreshes instead of shuffling.
+                    .sort((a, b) => {
+                        const ta = (a.liveStreamingDetails && a.liveStreamingDetails.actualStartTime) || '';
+                        const tb = (b.liveStreamingDetails && b.liveStreamingDetails.actualStartTime) || '';
+                        return ta.localeCompare(tb);
+                    })
+                    .slice(0, 8)
+                    .map(item => ({
+                        id: item.id,
                         title: item.snippet.title
                     }));
-                }
-                return [];
             } catch (err) {
                 console.error('Failed to fetch live streams:', err);
-                return [];
+                return null;
             }
+        }
+
+        // Applies a fetch result to videoIds/streamNames. Keeps the current
+        // list if the API is unreachable rather than wiping working players.
+        function applyFetchResult(result) {
+            if (result === null) {
+                if (liveStreams.length === 0) {
+                    videoIds = [...fallbackVideoIds];
+                    streamNames = [...fallbackStreamNames];
+                }
+                updateStreamSourceInfo(false, 0);
+                return;
+            }
+            liveStreams = result;
+            videoIds = liveStreams.map(s => s.id);
+            streamNames = liveStreams.map(s => s.title);
+            updateStreamSourceInfo(true, liveStreams.length);
         }
 
         function updateStreamSourceInfo(fromAPI, count) {
             const el = document.getElementById('streamSourceInfo');
             if (!el) return;
-            if (fromAPI) {
+            if (fromAPI && count === 0) {
+                el.className = 'stream-source-info warning';
+                el.textContent = '⚠ YouTube API reachable, but no streams are live on the channel right now';
+            } else if (fromAPI) {
                 el.className = 'stream-source-info';
                 el.textContent = `✓ Live streams loaded from YouTube API — ${count} stream${count !== 1 ? 's' : ''} currently live`;
             } else {
@@ -845,20 +932,11 @@
 
         // Called automatically when the YouTube IFrame API script is ready
         async function onYouTubeIframeAPIReady() {
-            liveStreams = await fetchLiveStreams();
-
-            if (liveStreams.length > 0) {
-                videoIds = liveStreams.map(s => s.id);
-                streamNames = liveStreams.map(s => s.title);
-                console.log(`Fetched ${liveStreams.length} live streams from YouTube API`);
-                updateStreamSourceInfo(true, liveStreams.length);
-            } else {
-                videoIds = [...fallbackVideoIds];
-                streamNames = [...fallbackStreamNames];
-                console.warn('API fetch failed or no live streams found. Using fallback IDs.');
-                updateStreamSourceInfo(false, 0);
-            }
-
+            const result = await fetchLiveStreams();
+            applyFetchResult(result);
+            console.log(result === null
+                ? 'YouTube API unreachable — using fallback IDs.'
+                : `Found ${result.length} live stream(s).`);
             initPlayers();
         }
 
@@ -872,6 +950,24 @@
             players = [];
 
             const maxStreams = showAllStreams ? 8 : 6;
+
+            // Rebuild every slot's placeholder. YT.Player swaps the placeholder
+            // div for an iframe, and destroy() doesn't reliably put it back, so
+            // re-creating a player on the same id could silently fail.
+            document.querySelectorAll('.video-container').forEach((container, i) => {
+                const old = container.querySelector(`#player-${i}`);
+                if (old) old.remove();
+                const placeholder = document.createElement('div');
+                placeholder.id = `player-${i}`;
+                if (i >= maxStreams || !videoIds[i]) {
+                    placeholder.className = 'offline-slot';
+                    placeholder.textContent = 'Camera offline';
+                }
+                container.appendChild(placeholder);
+                const dot = container.querySelector('.status-dot');
+                if (dot) dot.classList.remove('playing', 'buffering', 'paused', 'error');
+            });
+
             const count = Math.min(videoIds.length, maxStreams);
 
             for (let i = 0; i < count; i++) {
@@ -978,25 +1074,13 @@
 
         async function manualRefreshStreams() {
             console.log('Manual refresh triggered');
-            const freshStreams = await fetchLiveStreams();
-            if (freshStreams.length > 0) {
-                liveStreams = freshStreams;
-                videoIds = liveStreams.map(s => s.id);
-                streamNames = liveStreams.map(s => s.title);
-                updateStreamSourceInfo(true, liveStreams.length);
-            }
+            applyFetchResult(await fetchLiveStreams());
             initPlayers();
         }
 
         async function refreshPlayers() {
             console.log('Auto-refreshing all video players...');
-            const freshStreams = await fetchLiveStreams();
-            if (freshStreams.length > 0) {
-                liveStreams = freshStreams;
-                videoIds = liveStreams.map(s => s.id);
-                streamNames = liveStreams.map(s => s.title);
-                updateStreamSourceInfo(true, liveStreams.length);
-            }
+            applyFetchResult(await fetchLiveStreams());
             initPlayers();
 
             // Reschedule next auto-refresh
