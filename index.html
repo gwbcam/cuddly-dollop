@@ -792,27 +792,13 @@
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         const CORRECT_PASSWORD = "GWB8890";
-        const YOUTUBE_API_KEY = "AIzaSyAHzyy1SOEUtfK2F7rf7y1TVxjh9x8t7js";
-        const CHANNEL_ID = "UC8cLsaZLF8g_JQCkcePRIug";
+        // Which streams are live is worked out by a GitHub Action
+        // (.github/workflows/update-live.yml) every 10 minutes and published
+        // next to this page as live.json. The YouTube API key lives in the
+        // repo's Secrets, so it never appears in this page.
+        const LIVE_JSON_URL = 'live.json';
 
-        // Channel "uploads" playlist = channel ID with "UC" swapped for "UU".
-        // Live broadcasts appear here as soon as they start, unlike the search
-        // endpoint, whose index can miss live streams for days.
-        const UPLOADS_PLAYLIST_ID = 'UU' + CHANNEL_ID.slice(2);
-
-        // How many 50-video pages of the uploads list to scan. Camera streams
-        // can run for months while tutorials keep getting posted on top of
-        // them, so a long-running stream can sit deep in the list.
-        // 8 pages = 400 videos; costs ~16 quota units per check.
-        const MAX_UPLOAD_PAGES = 8;
-
-        // Optional: stream IDs that are always checked and shown if live —
-        // e.g. unlisted streams, which never appear in the uploads list.
-        // Paste the part after "watch?v=" (or after "live/") in a stream's URL.
-        const PINNED_VIDEO_IDS = [
-        ];
-
-        // Fallback video IDs used only if the YouTube API is unreachable.
+        // Fallback video IDs used only if live.json can't be loaded.
         // These go stale whenever a camera's broadcast is restarted (it gets a
         // new ID) — last updated Oct 2026 from the streams started 2026-09-23.
         const fallbackVideoIds = [
@@ -828,69 +814,27 @@
         let players = [];
         let showAllStreams = localStorage.getItem('showAllStreams') === 'true';
 
-        // ── YouTube API fetch ────────────────────────────────────────────────
+        // ── Live stream list (live.json) ─────────────────────────────────────
 
-        // Returns an array of {id, title} for broadcasts that are live right now,
-        // or null if the API couldn't be reached (so callers can tell
-        // "nothing is live" apart from "we don't know").
-        //
-        // Uses playlistItems + videos.list (1 quota unit each) instead of
-        // search?eventType=live (100 units, and its index regularly misses
-        // live streams entirely).
+        let liveListChangedAt = null;
+
+        // Returns an array of {id, title} for streams that are live, or null
+        // if live.json couldn't be loaded (so callers can tell "nothing is
+        // live" apart from "we don't know").
         async function fetchLiveStreams() {
-            const api = 'https://www.googleapis.com/youtube/v3';
             try {
-                // 1. Collect video IDs from the uploads list (newest first).
-                const ids = new Set(PINNED_VIDEO_IDS);
-                let pageToken = '';
-                for (let page = 0; page < MAX_UPLOAD_PAGES; page++) {
-                    const plRes = await fetch(`${api}/playlistItems?part=contentDetails&playlistId=${UPLOADS_PLAYLIST_ID}&maxResults=50${pageToken ? `&pageToken=${pageToken}` : ''}&key=${YOUTUBE_API_KEY}`);
-                    const pl = await plRes.json();
-                    if (pl.error) {
-                        console.error('YouTube API error (playlistItems):', pl.error.message);
-                        // Fail only if nothing came back at all
-                        if (ids.size === 0) return null;
-                        break;
-                    }
-                    (pl.items || []).forEach(item => {
-                        if (item.contentDetails && item.contentDetails.videoId) ids.add(item.contentDetails.videoId);
-                    });
-                    if (!pl.nextPageToken) break;
-                    pageToken = pl.nextPageToken;
+                // Timestamp stops the browser/CDN handing back an old copy
+                const res = await fetch(`${LIVE_JSON_URL}?t=${Date.now()}`, { cache: 'no-store' });
+                if (!res.ok) {
+                    console.error('Could not load live.json:', res.status);
+                    return null;
                 }
-                if (ids.size === 0) return [];
-
-                // 2. Look up live status, 50 IDs per request (API limit).
-                const allIds = [...ids];
-                const videos = [];
-                for (let i = 0; i < allIds.length; i += 50) {
-                    const chunk = allIds.slice(i, i + 50);
-                    const vRes = await fetch(`${api}/videos?part=snippet,liveStreamingDetails&id=${chunk.join(',')}&key=${YOUTUBE_API_KEY}`);
-                    const v = await vRes.json();
-                    if (v.error) {
-                        console.error('YouTube API error (videos):', v.error.message);
-                        if (videos.length === 0) return null;
-                        break;
-                    }
-                    videos.push(...(v.items || []));
-                }
-
-                return videos
-                    .filter(item => item.snippet.liveBroadcastContent === 'live')
-                    // Oldest broadcast first, so each camera keeps the same
-                    // grid slot across refreshes instead of shuffling.
-                    .sort((a, b) => {
-                        const ta = (a.liveStreamingDetails && a.liveStreamingDetails.actualStartTime) || '';
-                        const tb = (b.liveStreamingDetails && b.liveStreamingDetails.actualStartTime) || '';
-                        return ta.localeCompare(tb);
-                    })
-                    .slice(0, 8)
-                    .map(item => ({
-                        id: item.id,
-                        title: item.snippet.title
-                    }));
+                const data = await res.json();
+                if (!data || !Array.isArray(data.streams)) return null;
+                liveListChangedAt = data.changed_at ? new Date(data.changed_at) : null;
+                return data.streams.filter(s => s && s.id).slice(0, 8);
             } catch (err) {
-                console.error('Failed to fetch live streams:', err);
+                console.error('Failed to load live.json:', err);
                 return null;
             }
         }
@@ -915,15 +859,18 @@
         function updateStreamSourceInfo(fromAPI, count) {
             const el = document.getElementById('streamSourceInfo');
             if (!el) return;
+            const since = liveListChangedAt
+                ? ` (list last changed ${liveListChangedAt.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })})`
+                : '';
             if (fromAPI && count === 0) {
                 el.className = 'stream-source-info warning';
-                el.textContent = '⚠ YouTube API reachable, but no streams are live on the channel right now';
+                el.textContent = `⚠ No streams are live on the channel right now${since}`;
             } else if (fromAPI) {
                 el.className = 'stream-source-info';
-                el.textContent = `✓ Live streams loaded from YouTube API — ${count} stream${count !== 1 ? 's' : ''} currently live`;
+                el.textContent = `✓ ${count} stream${count !== 1 ? 's' : ''} currently live${since}`;
             } else {
                 el.className = 'stream-source-info warning';
-                el.textContent = '⚠ YouTube API unavailable — using fallback stream IDs';
+                el.textContent = '⚠ Live stream list (live.json) unavailable — using fallback stream IDs';
             }
             el.style.display = 'block';
         }
@@ -935,7 +882,7 @@
             const result = await fetchLiveStreams();
             applyFetchResult(result);
             console.log(result === null
-                ? 'YouTube API unreachable — using fallback IDs.'
+                ? 'live.json unavailable — using fallback IDs.'
                 : `Found ${result.length} live stream(s).`);
             initPlayers();
         }
